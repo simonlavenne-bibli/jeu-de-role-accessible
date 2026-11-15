@@ -127,6 +127,7 @@
   #accueil:focus, #accueil:active { color: var(--encre); background: var(--fond); }
   #accueil strong { font-size: 1.8rem; }
   #accueil[hidden] { display: none; }
+  #outils button[hidden] { display: none; }
 
   @media (prefers-reduced-motion: reduce) {
     .de.fige, .jauge.touchee .barre { animation: none; }
@@ -159,7 +160,7 @@
 <button id="accueil" type="button" autofocus>
   <strong>Premier combat</strong>
   <span>Un essai : une porte, une salle, un gobelin.</span>
-  <span>Touche l'écran ou appuie sur Entrée pour commencer. Le jeu te parle : monte le son.</span>
+  <span id="consigne">Touche l'écran ou appuie sur Entrée pour commencer. Le jeu te parle : monte le son.</span>
   <span>Au clavier : flèches pour choisir, Entrée pour valider, R pour répéter, P pour savoir où tu en es, C pour les couleurs.</span>
 </button>
 
@@ -743,7 +744,7 @@
       niveau.connect(ambiance);
       vent.start();
       setTimeout(goutte, 2500);
-      if (!window.VOIX_PAQUET) { prechargerClips(); }
+      if (VOIX_ACTIVE && !window.VOIX_PAQUET) { prechargerClips(); }
       if (audio.state === 'suspended') { audio.resume(); }
     } catch (e) {
       audio = null;
@@ -757,6 +758,9 @@
   }
 
   // ---------- Voix ----------
+  // La voix est en suspens en attendant les enregistrements d'un lecteur.
+  // Passer à true pour la réactiver : les fichiers sont attendus dans le dossier voix/.
+  var VOIX_ACTIVE = false;
   var synthese = window.speechSynthesis || null;
   var voixFrancaises = [];
   var indiceVoix = 0;
@@ -905,6 +909,8 @@
   async function dire(id) {
     var phrase = lire(id);
     if (!phrase) { console.error('Phrase manquante : ' + id); return; }
+    // Voix en suspens : on laisse seulement le temps de lire le texte.
+    if (!VOIX_ACTIVE) { return pause(300 + phrase.length * 30); }
     var tampon = null;
     if (audio) {
       tampon = await Promise.race([chargerClip(id), pause(3000).then(function () { return null; })]);
@@ -1235,9 +1241,9 @@
         ids.push('regle-combat');
       }
       if (m.type === 'choix-proposes') {
-        // Les choix ne sont redits que lorsqu'ils changent.
+        // Les choix ne sont redits que lorsqu'ils changent, et seulement quand la voix est active.
         var cle = m.donnees.choix.join(',');
-        if (cle === choixAnnonces) { continue; }
+        if (!VOIX_ACTIVE || cle === choixAnnonces) { continue; }
         choixAnnonces = cle;
       } else if (ids.length) {
         ecrire(ids.map(lire).join(' '));
@@ -1272,7 +1278,10 @@
   document.getElementById('repeter').addEventListener('click', function () { redire(dernieresPhrases.slice()); });
   document.getElementById('point').addEventListener('click', function () {
     var ids = [];
-    moteur.executer({ type: 'faire-le-point' }).forEach(function (m) { ids = ids.concat(phrasesDe(m)); });
+    moteur.executer({ type: 'faire-le-point' }).forEach(function (m) {
+      if (VOIX_ACTIVE || m.type !== 'choix-proposes') { ids = ids.concat(phrasesDe(m)); }
+    });
+    if (!VOIX_ACTIVE && ids.length) { ecrire(ids.map(lire).join(' ')); }
     redire(ids);
   });
   document.getElementById('couleurs').addEventListener('click', function () {
@@ -1285,6 +1294,10 @@
     accueil.hidden = true;
     demarrerAudio();
     // Première parole déclenchée par le geste du joueur, pour débloquer la voix.
+    if (!VOIX_ACTIVE) {
+      envoyer({ type: 'nouvelle-partie' });
+      return;
+    }
     if (synthese) { try { synthese.speak(new SpeechSynthesisUtterance(' ')); } catch (e) {} }
     // On attend la voix enregistrée avant de commencer, vingt secondes au plus.
     ecrire('Chargement de la voix…');
@@ -1321,7 +1334,13 @@
   });
 
   appliquerCouleurs();
-  chargerPaquet();
+  if (VOIX_ACTIVE) {
+    chargerPaquet();
+  } else {
+    document.getElementById('consigne').textContent = 'Version sans voix : les textes s\'affichent, les bruitages restent. Touche l\'écran ou appuie sur Entrée pour commencer, et monte le son.';
+    document.getElementById('repeter').hidden = true;
+    document.getElementById('outils').style.gridTemplateColumns = 'repeat(2, 1fr)';
+  }
   montrer('porte');
   accueil.focus();
 })();
