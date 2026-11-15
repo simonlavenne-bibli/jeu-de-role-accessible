@@ -121,15 +121,15 @@ Chaque commande produit une liste ordonnée de messages. Tous ont la même forme
 
 | Type | Données |
 |---|---|
-| `partie-commencee` | — |
+| `partie-commencee` | `vie`, `vieMax`, `desDeChance` |
 | `porte-ouverte` | `porte` |
 | `salle-entree` | `salle`, `typeSalle` |
-| `monstre-apparait` | `monstre` |
+| `monstre-apparait` | `monstre`, `vieMonstre` |
 | `des-lances` | `qui` (`heros` ou `monstre`), `des` (ex. `[3, 5]`), `bonus`, `total` |
 | `assaut-resultat` | `gagnant` (`heros`, `monstre`, `egalite`), `degats`, `critique`, `vieHeros`, `vieMonstre` |
 | `fuite-resultat` | `de`, `seuil`, `reussie` |
 | `chance-proposee` | `situation`, `desRestants` |
-| `chance-resultat` | `de`, `reussie`, `desRestants` |
+| `chance-resultat` | `de`, `seuil`, `reussie`, `desRestants` |
 | `piege-declenche` | `piege`, `degats` |
 | `monstre-vaincu` | `monstre` |
 | `butin-trouve` | `genre` (`arme`, `information`, `de-de-chance`), `objet` |

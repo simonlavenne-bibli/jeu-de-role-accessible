@@ -19,6 +19,7 @@
     font-size: 1.25rem;
     line-height: 1.45;
   }
+  p { margin: 0; }
   #jeu {
     max-width: 40rem;
     min-height: 100%;
@@ -26,29 +27,73 @@
     padding: 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.7rem;
   }
-  #statut {
-    margin: 0;
+
+  /* Jauges de points de vie */
+  #jauges {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
     font-size: 1rem;
     font-weight: bold;
     border-bottom: 3px solid var(--encre);
-    padding-bottom: 0.4rem;
-    min-height: 2rem;
+    padding-bottom: 0.5rem;
   }
+  .jauge { display: grid; grid-template-columns: 4.6rem 1fr auto; align-items: center; gap: 0.5rem; }
+  .jauge[hidden] { display: none; }
+  .jauge .valeur { text-align: right; white-space: nowrap; min-width: 5.6rem; }
+  .barre { display: flex; gap: 2px; }
+  .barre i { flex: 1; height: 1.15rem; border: 2px solid var(--encre); }
+  .barre i.plein { background: var(--encre); }
+  .jauge.touchee .barre { animation: clignote 0.18s steps(1) 4; }
+  @keyframes clignote { 50% { opacity: 0; } }
+
   #image {
     display: block;
-    width: min(60vw, 34vh, 18rem);
-    height: min(60vw, 34vh, 18rem);
+    width: min(60vw, 32vh, 18rem);
+    height: min(60vw, 32vh, 18rem);
     margin: 0 auto;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
   }
-  #texte { flex: 1; min-height: 6rem; }
+  #jeu.combat #image { width: min(32vw, 16vh, 10rem); height: min(32vw, 16vh, 10rem); }
+
+  /* Table de combat : les dés et le calcul */
+  #table { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  #table[hidden] { display: none; }
+  .camp { border: 3px solid var(--encre); padding: 0.4rem 0.3rem; text-align: center; }
+  .camp .titre { font-size: 1rem; font-weight: bold; }
+  .camp .des { display: flex; justify-content: center; align-items: center; gap: 0.6rem; min-height: 4.2rem; }
+  .camp .calcul { font-size: 1rem; min-height: 1.5rem; }
+  .camp .total { font-size: 1.5rem; font-weight: bold; min-height: 2.3rem; padding: 0 0.3rem; }
+  .camp.gagne { border-width: 7px; padding: calc(0.4rem - 4px) calc(0.3rem - 4px); }
+  .camp.gagne .total { background: var(--encre); color: var(--fond); }
+  #regle { grid-column: 1 / -1; font-size: 0.95rem; text-align: center; }
+
+  .de {
+    width: 3.2rem;
+    height: 3.2rem;
+    border: 4px solid var(--encre);
+    background: var(--fond);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 3px;
+    padding: 5px;
+  }
+  .de i.point { background: var(--encre); }
+  .de.plein { background: var(--encre); }
+  .de.plein i.point { background: var(--fond); }
+  .de.fige { animation: pose 0.25s ease-out; }
+  @keyframes pose { from { transform: scale(1.3); } to { transform: scale(1); } }
+
+  #texte { flex: 1; min-height: 5rem; }
   #texte p { margin: 0 0 0.6rem; padding-left: 0.6rem; border-left: 5px solid transparent; }
   #texte p:last-child { font-weight: bold; border-left-color: var(--encre); }
-  #avis { margin: 0; font-size: 1rem; border: 3px dashed var(--encre); padding: 0.5rem; }
+  #avis { font-size: 1rem; border: 3px dashed var(--encre); padding: 0.5rem; }
   #avis[hidden] { display: none; }
+
   button {
     font: inherit;
     font-weight: bold;
@@ -59,15 +104,12 @@
     padding: 0.6rem;
     cursor: pointer;
   }
-  button:focus, button:active {
-    outline: none;
-    color: var(--fond);
-    background: var(--encre);
-  }
+  button:focus, button:active { outline: none; color: var(--fond); background: var(--encre); }
   #choix { display: flex; flex-direction: column; gap: 0.6rem; }
   #choix button { min-height: 4.2rem; font-size: 1.4rem; }
-  #outils { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-  #outils button { min-height: 3.4rem; font-size: 1rem; border-width: 3px; }
+  #outils { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  #outils button { min-height: 3rem; font-size: 1rem; border-width: 3px; padding: 0.3rem; }
+
   #accueil {
     position: fixed;
     inset: 0;
@@ -85,12 +127,25 @@
   #accueil:focus, #accueil:active { color: var(--encre); background: var(--fond); }
   #accueil strong { font-size: 1.8rem; }
   #accueil[hidden] { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .de.fige, .jauge.touchee .barre { animation: none; }
+  }
 </style>
 </head>
 <body>
 <main id="jeu">
-  <p id="statut"></p>
+  <div id="jauges">
+    <div class="jauge" id="jauge-heros"><span class="nom">Toi</span><span class="barre"></span><span class="valeur"></span></div>
+    <div class="jauge" id="jauge-monstre" hidden><span class="nom">Gobelin</span><span class="barre"></span><span class="valeur"></span></div>
+    <p id="chance"></p>
+  </div>
   <canvas id="image" width="100" height="100" role="img" aria-label="Illustration"></canvas>
+  <div id="table" hidden>
+    <div class="camp" id="camp-heros"><p class="titre">Toi</p><div class="des"></div><p class="calcul"></p><p class="total"></p></div>
+    <div class="camp" id="camp-monstre"><p class="titre">Gobelin</p><div class="des"></div><p class="calcul"></p><p class="total"></p></div>
+    <p id="regle">Chacun lance 2 dés et ajoute son habileté. Le plus haut total touche.</p>
+  </div>
   <div id="texte"></div>
   <p id="avis" hidden></p>
   <div id="choix"></div>
@@ -98,6 +153,7 @@
     <button id="repeter" type="button">Répéter</button>
     <button id="point" type="button">Où j'en suis</button>
     <button id="couleurs" type="button">Couleurs</button>
+    <button id="voix" type="button">Voix</button>
   </div>
 </main>
 
@@ -105,7 +161,7 @@
   <strong>Premier combat</strong>
   <span>Un essai : une porte, une salle, un gobelin.</span>
   <span>Touche l'écran ou appuie sur Entrée pour commencer. Le jeu te parle : monte le son.</span>
-  <span>Au clavier : flèches pour choisir, Entrée pour valider, R pour répéter, P pour savoir où tu en es, C pour changer les couleurs.</span>
+  <span>Au clavier : flèches pour choisir, Entrée pour valider, R pour répéter, P pour savoir où tu en es, C pour les couleurs, V pour la voix.</span>
 </button>
 
 <!-- ========================================================= -->
@@ -121,7 +177,7 @@
     'dague': { bonus: 1, degats: 2 }
   };
   var MONSTRES = {
-    gobelin: { habilete: 5, vie: 6, degats: 2, seuilFuite: 4, butin: 'dague' }
+    gobelin: { habilete: 5, vie: 4, degats: 2, seuilFuite: 4, butin: 'dague' }
   };
   var SEUIL_CHANCE = 4;
 
@@ -164,7 +220,10 @@
         chanceEnAttente: null,
         choix: []
       };
-      return [{ type: 'partie-commencee', donnees: {} }, proposer('ouvrir-porte')];
+      return [
+        { type: 'partie-commencee', donnees: { vie: etat.heros.vie, vieMax: etat.heros.vieMax, desDeChance: etat.heros.desDeChance } },
+        proposer('ouvrir-porte')
+      ];
     }
 
     function ouvrirPorte() {
@@ -174,7 +233,7 @@
       return [
         { type: 'porte-ouverte', donnees: {} },
         { type: 'salle-entree', donnees: { typeSalle: 'monstre' } },
-        { type: 'monstre-apparait', donnees: { monstre: id } },
+        { type: 'monstre-apparait', donnees: { monstre: id, vieMonstre: MONSTRES[id].vie } },
         proposer('attaquer', 'fuir')
       ];
     }
@@ -292,7 +351,7 @@
       h.desDeChance -= 1;
       var messages = [{
         type: 'chance-resultat',
-        donnees: { de: resultat, reussie: reussie, desRestants: h.desDeChance, situation: attente.situation }
+        donnees: { de: resultat, seuil: SEUIL_CHANCE, reussie: reussie, desRestants: h.desDeChance, situation: attente.situation }
       }];
       if (reussie) { return messages.concat(tourSuivant()); }
       return messages.concat(subir(attente.degats, attente.critique));
@@ -321,7 +380,7 @@
         type: 'etat-heros',
         donnees: { vie: h.vie, vieMax: h.vieMax, desDeChance: h.desDeChance, arme: h.arme }
       }];
-      if (etat.combat) {
+      if (etat.combat && etat.combat.vieMonstre > 0) {
         messages.push({ type: 'etat-combat', donnees: { monstre: etat.combat.monstre, vieMonstre: etat.combat.vieMonstre } });
       }
       messages.push({ type: 'choix-proposes', donnees: { choix: etat.choix.map(function (c) { return c.id; }) } });
@@ -357,7 +416,7 @@
 </script>
 
 <!-- ========================================================= -->
-<!-- 2. RENDU : textes, voix, sons, image, commandes.           -->
+<!-- 2. RENDU : textes, voix, sons, image, dés, commandes.      -->
 <!-- ========================================================= -->
 <script>
 (function () {
@@ -377,6 +436,7 @@
   var NOMS_ARMES = { 'epee-rouillee': 'une épée rouillée', 'dague': 'une dague' };
   var COUPS_HEROS = ['Ta lame trouve la chair.', 'Tu frappes à l\'épaule.', 'Ton coup porte.'];
   var COUPS_MONSTRE = ['Le hachoir t\'entaille le bras.', 'Le gobelin te frappe au flanc.', 'Tu n\'esquives pas assez vite.'];
+  var REGLE_DU_COMBAT = 'Le combat : chacun lance deux dés et ajoute son habileté. Le plus haut total touche l\'autre.';
   var tirage = 0;
 
   function variante(liste) { tirage += 1; return liste[tirage % liste.length]; }
@@ -397,35 +457,27 @@
         return 'Une salle basse, sous une voûte noircie. Au mur, une torche agonise.';
       case 'monstre-apparait':
         return 'Dans l\'ombre, deux yeux s\'allument. Un gobelin bondit, un hachoir ébréché au poing.';
-      case 'des-lances':
-        if (d.qui === 'heros') {
-          return 'Tu lances les dés : ' + d.des[0] + ' et ' + d.des[1] + '. Avec ton habileté, ' + d.total + '.';
-        }
-        return 'Le gobelin : ' + d.des[0] + ' et ' + d.des[1] + '. Avec son habileté, ' + d.total + '.';
+      case 'assaut-des':
+        return 'Tu fais ' + d.heros.total + '. Le gobelin, ' + d.monstre.total + '.';
       case 'assaut-resultat':
-        if (d.gagnant === 'egalite') { return 'Les lames s\'entrechoquent. Personne n\'est touché.'; }
+        if (d.gagnant === 'egalite') { return 'Égalité. Les lames s\'entrechoquent.'; }
         if (d.gagnant === 'heros') {
-          return (d.critique ? 'Double six ! ' : '') + variante(COUPS_HEROS) +
-            ' Le gobelin perd ' + points(d.degats) + '.' +
-            (d.vieMonstre > 0 ? ' Il lui en reste ' + d.vieMonstre + '.' : '');
+          return (d.critique ? 'Double six, dégâts doublés ! ' : '') + variante(COUPS_HEROS) +
+            (d.vieMonstre > 0 ? ' Il reste ' + points(d.vieMonstre) + ' au gobelin.' : '');
         }
         return (d.critique ? 'Double six pour le gobelin ! ' : '') + variante(COUPS_MONSTRE) +
-          ' Tu perds ' + points(d.degats) + '.' +
-          (d.vieHeros > 0 ? ' Il t\'en reste ' + d.vieHeros + '.' : '');
+          (d.vieHeros > 0 ? ' Il te reste ' + points(d.vieHeros) + '.' : '');
       case 'fuite-resultat':
-        return 'Tu tentes de fuir. Le dé : ' + d.de + '. Il fallait ' + d.seuil + ' ou plus.' +
+        return 'Tu tentes de fuir : ' + d.de + '. Il fallait ' + d.seuil + ' ou plus.' +
           (d.reussie
-            ? ' Tu recules d\'un bond et claques la porte derrière toi. De l\'autre côté, le gobelin hurle de rage.'
-            : ' Le gobelin te barre le passage et lève son hachoir.');
+            ? ' Tu recules d\'un bond et claques la porte derrière toi.'
+            : ' Le gobelin te barre le passage.');
       case 'chance-proposee':
         return (d.situation === 'coup-mortel' ? 'Ce coup serait le dernier.' : 'Le coup va tomber.') +
           ' Il te reste ' + desDeChance(d.desRestants) + '.';
       case 'chance-resultat':
-        return 'Tu lances un dé de chance : ' + d.de + '.' +
-          (d.reussie
-            ? ' La chance te sourit. Le hachoir siffle à un cheveu de ta gorge.'
-            : ' La chance t\'abandonne.') +
-          ' Il te reste ' + desDeChance(d.desRestants) + '.';
+        return 'Dé de chance : ' + d.de + '. Il fallait ' + d.seuil + ' ou plus.' +
+          (d.reussie ? ' Le hachoir siffle à un cheveu de ta gorge.' : ' La chance t\'abandonne.');
       case 'monstre-vaincu':
         return 'Le gobelin s\'effondre dans un dernier couinement. Le silence retombe.';
       case 'butin-trouve':
@@ -524,12 +576,12 @@
     },
     des: function (t) {
       var moment = t;
-      for (var i = 0; i < 7; i += 1) {
+      for (var i = 0; i < 8; i += 1) {
         souffle(moment, 0.035, 0.35, 2600, 'highpass');
         note('square', 420 + Math.random() * 500, null, moment, 0.025, 0.06);
-        moment += 0.05 + Math.random() * 0.07;
+        moment += 0.06 + Math.random() * 0.07;
       }
-      return 0.7;
+      return 0.85;
     },
     coup: function (t) {
       souffle(t, 0.13, 0.45, 1800);
@@ -622,18 +674,31 @@
 
   // ---------- Voix ----------
   var synthese = window.speechSynthesis || null;
-  var voixFrancaise = null;
+  var voixFrancaises = [];
+  var indiceVoix = 0;
   var voixMuette = !synthese;
 
-  function choisirVoix() {
+  function qualite(v) {
+    var valeur = 0;
+    if (/natural|neural|enhanced|premium|améliorée|amelioree|google/i.test(v.name)) { valeur += 2; }
+    if (/fr[-_]FR/i.test(v.lang)) { valeur += 1; }
+    return valeur;
+  }
+
+  function listerVoix() {
     if (!synthese) { return; }
-    var voix = synthese.getVoices() || [];
-    var francaises = voix.filter(function (v) { return /^fr/i.test(v.lang); });
-    voixFrancaise = francaises.filter(function (v) { return /fr[-_]FR/i.test(v.lang); })[0] || francaises[0] || null;
+    var toutes = synthese.getVoices() || [];
+    voixFrancaises = toutes.filter(function (v) { return /^fr/i.test(v.lang); });
+    voixFrancaises.sort(function (a, b) { return qualite(b) - qualite(a); });
+    indiceVoix = 0;
+    try {
+      var nom = localStorage.getItem('voix');
+      voixFrancaises.forEach(function (v, i) { if (v.name === nom) { indiceVoix = i; } });
+    } catch (e) {}
   }
   if (synthese) {
-    choisirVoix();
-    if (typeof synthese.addEventListener === 'function') { synthese.addEventListener('voiceschanged', choisirVoix); }
+    listerVoix();
+    if (typeof synthese.addEventListener === 'function') { synthese.addEventListener('voiceschanged', listerVoix); }
   }
 
   function pause(ms) { return new Promise(function (resoudre) { setTimeout(resoudre, ms); }); }
@@ -644,6 +709,8 @@
       if (voixMuette) { setTimeout(resoudre, lecture); return; }
       var termine = false;
       var parole;
+      var gardeDepart;
+      var gardeFin;
       function finir() {
         if (termine) { return; }
         termine = true;
@@ -660,16 +727,16 @@
         return;
       }
       parole.lang = 'fr-FR';
-      if (voixFrancaise) { parole.voice = voixFrancaise; }
+      if (voixFrancaises[indiceVoix]) { parole.voice = voixFrancaises[indiceVoix]; }
       parole.rate = 1;
       parole.pitch = 0.9;
-      var gardeDepart = setTimeout(function () {
+      gardeDepart = setTimeout(function () {
         // La voix n'a jamais démarré : on continue en texte seul.
         voixMuette = true;
         avertir('La voix ne démarre pas ici. Ouvre la page dans ton navigateur (Safari ou Chrome) pour l\'entendre.');
         setTimeout(finir, lecture);
       }, 2500);
-      var gardeFin = setTimeout(finir, 4000 + phrase.length * 120);
+      gardeFin = setTimeout(finir, 4000 + phrase.length * 120);
       parole.onstart = function () { clearTimeout(gardeDepart); };
       parole.onend = finir;
       parole.onerror = finir;
@@ -694,9 +761,10 @@
     'partie-commencee': 'porte',
     'salle-entree': 'salle-vide',
     'monstre-apparait': 'gobelin',
-    'des-lances': 'gobelin',
+    'assaut-des': 'gobelin',
     'assaut-resultat': 'gobelin',
     'chance-proposee': 'de-de-chance',
+    'chance-resultat': 'gobelin',
     'butin-trouve': 'dague',
     'heros-mort': ''
   };
@@ -746,11 +814,15 @@
     dessiner();
   }
 
-  // ---------- Écran ----------
+  // ---------- Écran : textes, jauges, choix ----------
+  var cadre = document.getElementById('jeu');
   var zoneTexte = document.getElementById('texte');
   var zoneChoix = document.getElementById('choix');
-  var zoneStatut = document.getElementById('statut');
   var zoneAvis = document.getElementById('avis');
+  var zoneChance = document.getElementById('chance');
+  var jaugeHeros = document.getElementById('jauge-heros');
+  var jaugeMonstre = document.getElementById('jauge-monstre');
+  var vue = { vie: 0, vieMax: 0, chance: 0, vieMonstre: 0, vieMonstreMax: 0 };
 
   function avertir(phrase) { zoneAvis.textContent = phrase; zoneAvis.hidden = false; }
 
@@ -761,12 +833,28 @@
     while (zoneTexte.children.length > 3) { zoneTexte.removeChild(zoneTexte.firstChild); }
   }
 
-  function afficherStatut() {
-    var e = moteur.etat();
-    if (!e) { zoneStatut.textContent = ''; return; }
-    var parties = ['Vie ' + e.heros.vie + ' sur ' + e.heros.vieMax, 'Chance ' + e.heros.desDeChance];
-    if (e.combat && e.combat.vieMonstre > 0) { parties.push('Gobelin ' + e.combat.vieMonstre); }
-    zoneStatut.textContent = parties.join(' · ');
+  function remplirJauge(jauge, valeur, maximum) {
+    var barre = jauge.querySelector('.barre');
+    barre.textContent = '';
+    for (var i = 0; i < maximum; i += 1) {
+      var segment = document.createElement('i');
+      if (i < valeur) { segment.className = 'plein'; }
+      barre.appendChild(segment);
+    }
+    jauge.querySelector('.valeur').textContent = valeur + ' sur ' + maximum;
+  }
+
+  function afficherJauges() {
+    remplirJauge(jaugeHeros, vue.vie, vue.vieMax);
+    jaugeMonstre.hidden = vue.vieMonstreMax === 0;
+    if (vue.vieMonstreMax) { remplirJauge(jaugeMonstre, vue.vieMonstre, vue.vieMonstreMax); }
+    zoneChance.textContent = 'Dés de chance : ' + vue.chance;
+  }
+
+  function secouer(jauge) {
+    jauge.classList.remove('touchee');
+    void jauge.offsetWidth;
+    jauge.classList.add('touchee');
   }
 
   function afficherChoix(ids) {
@@ -780,26 +868,197 @@
     });
   }
 
-  // ---------- Enchaînement : son, puis texte, puis voix ----------
-  var SONS_PAR_MESSAGE = {
-    'porte-ouverte': function () { return ['porte']; },
-    'monstre-apparait': function () { return ['cri']; },
-    'des-lances': function () { return ['des']; },
-    'assaut-resultat': function (d) {
-      if (d.gagnant === 'egalite') { return ['choc']; }
-      if (d.gagnant === 'heros') { return [d.critique ? 'critique' : 'coup']; }
-      return ['blessure'];
-    },
-    'fuite-resultat': function (d) { return d.reussie ? ['des', 'fuite'] : ['des']; },
-    'chance-resultat': function (d) { return ['des', d.reussie ? 'chanceOui' : 'chanceNon']; },
-    'monstre-vaincu': function () { return ['victoire']; },
-    'butin-trouve': function () { return ['butin']; },
-    'heros-mort': function () { return ['mort']; }
-  };
+  // ---------- Table de combat et dés ----------
+  var table = document.getElementById('table');
+  var campHeros = document.getElementById('camp-heros');
+  var campMonstre = document.getElementById('camp-monstre');
+  var FACES = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  var mouvementReduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function creerDe(plein) {
+    var d = document.createElement('div');
+    d.className = plein ? 'de plein' : 'de';
+    for (var i = 0; i < 9; i += 1) { d.appendChild(document.createElement('i')); }
+    return d;
+  }
+
+  function montrerFace(d, valeur) {
+    var pointsDeLaFace = FACES[valeur];
+    for (var i = 0; i < 9; i += 1) {
+      d.children[i].className = pointsDeLaFace.indexOf(i) === -1 ? '' : 'point';
+    }
+  }
+
+  function viderCamp(camp, titre) {
+    camp.classList.remove('gagne');
+    camp.querySelector('.titre').textContent = titre;
+    camp.querySelector('.des').textContent = '';
+    camp.querySelector('.calcul').textContent = '';
+    camp.querySelector('.total').textContent = '';
+  }
+
+  function viderTable() {
+    viderCamp(campHeros, 'Toi');
+    viderCamp(campMonstre, 'Gobelin');
+  }
+
+  function entre(a, b) { return a + Math.random() * (b - a); }
+
+  // Les dés roulent, puis se figent sur leur résultat.
+  async function roulerDes(lancers, monTour) {
+    jouerSon('des');
+    if (!mouvementReduit) {
+      var fin = Date.now() + 900;
+      while (Date.now() < fin && monTour === tour) {
+        lancers.forEach(function (l) {
+          montrerFace(l.de, 1 + Math.floor(Math.random() * 6));
+          l.de.style.transform = 'translate(' + entre(-8, 8) + 'px,' + entre(-8, 8) + 'px) rotate(' + entre(-35, 35) + 'deg)';
+        });
+        await pause(70);
+      }
+    }
+    lancers.forEach(function (l) {
+      montrerFace(l.de, l.valeur);
+      l.de.style.transform = '';
+      l.de.classList.add('fige');
+    });
+    await pause(350);
+  }
+
+  async function jouerAssaut(heros, monstre, monTour) {
+    viderTable();
+    var lancers = [];
+    [[campHeros, heros, true], [campMonstre, monstre, false]].forEach(function (c) {
+      c[1].des.forEach(function (valeur) {
+        var d = creerDe(c[2]);
+        c[0].querySelector('.des').appendChild(d);
+        lancers.push({ de: d, valeur: valeur });
+      });
+    });
+    await roulerDes(lancers, monTour);
+    [[campHeros, heros], [campMonstre, monstre]].forEach(function (c) {
+      c[0].querySelector('.calcul').textContent = (c[1].des[0] + c[1].des[1]) + ' + ' + c[1].bonus + ' d\'habileté';
+      c[0].querySelector('.total').textContent = '= ' + c[1].total;
+    });
+  }
+
+  async function jouerJetSimple(titre, valeur, seuil, reussi, monTour) {
+    viderTable();
+    campHeros.querySelector('.titre').textContent = titre;
+    campMonstre.querySelector('.titre').textContent = 'Il faut';
+    campMonstre.querySelector('.calcul').textContent = seuil + ' ou plus';
+    var d = creerDe(true);
+    campHeros.querySelector('.des').appendChild(d);
+    await roulerDes([{ de: d, valeur: valeur }], monTour);
+    campHeros.querySelector('.total').textContent = '= ' + valeur;
+    campMonstre.querySelector('.total').textContent = reussi ? 'Réussi' : 'Raté';
+    if (reussi) { campHeros.classList.add('gagne'); } else { campMonstre.classList.add('gagne'); }
+  }
+
+  function ouvrirTable() { viderTable(); table.hidden = false; cadre.classList.add('combat'); }
+  function fermerTable() { table.hidden = true; cadre.classList.remove('combat'); }
+
+  // ---------- Mise en scène de chaque message, avant sa phrase ----------
+  var regleExpliquee = false;
+
+  async function mettreEnScene(m, monTour) {
+    var d = m.donnees;
+    var sons = [];
+    switch (m.type) {
+      case 'partie-commencee':
+        fermerTable();
+        vue = { vie: d.vie, vieMax: d.vieMax, chance: d.desDeChance, vieMonstre: 0, vieMonstreMax: 0 };
+        afficherJauges();
+        break;
+      case 'porte-ouverte':
+        sons = ['porte'];
+        break;
+      case 'monstre-apparait':
+        sons = ['cri'];
+        vue.vieMonstre = d.vieMonstre;
+        vue.vieMonstreMax = d.vieMonstre;
+        afficherJauges();
+        ouvrirTable();
+        break;
+      case 'assaut-des':
+        await jouerAssaut(d.heros, d.monstre, monTour);
+        break;
+      case 'assaut-resultat':
+        if (d.gagnant === 'heros') {
+          sons = [d.critique ? 'critique' : 'coup'];
+          campHeros.classList.add('gagne');
+          secouer(jaugeMonstre);
+        } else if (d.gagnant === 'monstre') {
+          sons = ['blessure'];
+          campMonstre.classList.add('gagne');
+          secouer(jaugeHeros);
+        } else {
+          sons = ['choc'];
+        }
+        vue.vie = d.vieHeros;
+        vue.vieMonstre = d.vieMonstre;
+        afficherJauges();
+        break;
+      case 'fuite-resultat':
+        await jouerJetSimple('Fuite', d.de, d.seuil, d.reussie, monTour);
+        if (d.reussie) { sons = ['fuite']; }
+        break;
+      case 'chance-proposee':
+        vue.chance = d.desRestants;
+        afficherJauges();
+        break;
+      case 'chance-resultat':
+        await jouerJetSimple('Chance', d.de, d.seuil, d.reussie, monTour);
+        sons = [d.reussie ? 'chanceOui' : 'chanceNon'];
+        vue.chance = d.desRestants;
+        afficherJauges();
+        break;
+      case 'monstre-vaincu':
+        sons = ['victoire'];
+        break;
+      case 'butin-trouve':
+        sons = ['butin'];
+        fermerTable();
+        vue.vieMonstreMax = 0;
+        afficherJauges();
+        break;
+      case 'heros-mort':
+        sons = ['mort'];
+        fermerTable();
+        break;
+      case 'fin-essai':
+        fermerTable();
+        vue.vieMonstreMax = 0;
+        afficherJauges();
+        break;
+    }
+    for (var s = 0; s < sons.length; s += 1) {
+      if (monTour !== tour) { return; }
+      var duree = jouerSon(sons[s]);
+      if (duree) { await pause(duree * 1000); }
+    }
+  }
+
+  // Les deux lancers d'un assaut sont montrés ensemble, pour un combat plus rapide.
+  function regrouper(messages) {
+    var scenes = [];
+    for (var i = 0; i < messages.length; i += 1) {
+      var m = messages[i];
+      var suivant = messages[i + 1];
+      if (m.type === 'des-lances' && suivant && suivant.type === 'des-lances') {
+        scenes.push({ type: 'assaut-des', donnees: { heros: m.donnees, monstre: suivant.donnees } });
+        i += 1;
+      } else {
+        scenes.push(m);
+      }
+    }
+    return scenes;
+  }
 
   var moteur = window.MOTEUR.creerMoteur(Date.now());
   var tour = 0;
   var dernieresPhrases = [];
+  var choixAnnonces = '';
 
   async function rendre(messages) {
     tour += 1;
@@ -809,23 +1068,31 @@
     if (monTour !== tour) { return; }
     zoneTexte.textContent = '';
     dernieresPhrases = [];
-    for (var i = 0; i < messages.length; i += 1) {
-      var m = messages[i];
+    var scenes = regrouper(messages);
+    for (var i = 0; i < scenes.length; i += 1) {
+      var m = scenes[i];
       if (m.type === 'choix-proposes') { afficherChoix(m.donnees.choix); }
       if (Object.prototype.hasOwnProperty.call(IMAGE_PAR_MESSAGE, m.type)) { montrer(IMAGE_PAR_MESSAGE[m.type]); }
-      var sons = SONS_PAR_MESSAGE[m.type] ? SONS_PAR_MESSAGE[m.type](m.donnees) : [];
-      for (var s = 0; s < sons.length; s += 1) {
-        var duree = jouerSon(sons[s]);
-        if (duree) { await pause(duree * 1000); }
+      await mettreEnScene(m, monTour);
+      if (monTour !== tour) { return; }
+      var phrases = [texte(m)];
+      if (m.type === 'monstre-apparait' && !regleExpliquee) {
+        regleExpliquee = true;
+        phrases.push(REGLE_DU_COMBAT);
+      }
+      if (m.type === 'choix-proposes') {
+        // Les choix ne sont redits que lorsqu'ils changent.
+        var cle = m.donnees.choix.join(',');
+        if (cle === choixAnnonces) { continue; }
+        choixAnnonces = cle;
+      }
+      for (var p = 0; p < phrases.length; p += 1) {
+        if (!phrases[p]) { continue; }
+        if (m.type !== 'choix-proposes') { ecrire(phrases[p]); }
+        dernieresPhrases.push(phrases[p]);
+        await dire(phrases[p]);
         if (monTour !== tour) { return; }
       }
-      afficherStatut();
-      var phrase = texte(m);
-      if (!phrase) { continue; }
-      if (m.type !== 'choix-proposes') { ecrire(phrase); }
-      dernieresPhrases.push(phrase);
-      await dire(phrase);
-      if (monTour !== tour) { return; }
     }
   }
 
@@ -857,6 +1124,18 @@
     couleur = (couleur + 1) % COULEURS.length;
     appliquerCouleurs();
     redire([COULEURS[couleur][1]]);
+  });
+  document.getElementById('voix').addEventListener('click', function () {
+    if (!voixFrancaises.length) { listerVoix(); }
+    if (!voixFrancaises.length) {
+      avertir('Aucune voix française trouvée sur cet appareil.');
+      return;
+    }
+    if (voixFrancaises.length > 1) { indiceVoix = (indiceVoix + 1) % voixFrancaises.length; }
+    var nom = voixFrancaises[indiceVoix].name;
+    try { localStorage.setItem('voix', nom); } catch (e) {}
+    avertir('Voix ' + (indiceVoix + 1) + ' sur ' + voixFrancaises.length + ' : ' + nom);
+    redire(['Voix ' + (indiceVoix + 1) + ' sur ' + voixFrancaises.length + '. Le froid monte des dalles.']);
   });
 
   var accueil = document.getElementById('accueil');
@@ -893,6 +1172,7 @@
     if (touche === 'r' || touche === 'R') { document.getElementById('repeter').click(); }
     if (touche === 'p' || touche === 'P') { document.getElementById('point').click(); }
     if (touche === 'c' || touche === 'C') { document.getElementById('couleurs').click(); }
+    if (touche === 'v' || touche === 'V') { document.getElementById('voix').click(); }
   });
 
   appliquerCouleurs();
