@@ -743,7 +743,7 @@
       niveau.connect(ambiance);
       vent.start();
       setTimeout(goutte, 2500);
-      prechargerClips();
+      if (!window.VOIX_PAQUET) { prechargerClips(); }
       if (audio.state === 'suspended') { audio.resume(); }
     } catch (e) {
       audio = null;
@@ -837,16 +837,27 @@
     return new Promise(function (resoudre, rejeter) { audio.decodeAudioData(octets, resoudre, rejeter); });
   }
 
+  var paquet = null;
+
+  function chargerPaquet() {
+    if (!paquet) {
+      paquet = window.VOIX_PAQUET
+        ? fetch(window.VOIX_PAQUET.fichier)
+            .then(function (reponse) { if (!reponse.ok) { throw new Error('absent'); } return reponse.arrayBuffer(); })
+            .catch(function () { return null; })
+        : Promise.resolve(null);
+    }
+    return paquet;
+  }
+
   function chargerClip(id) {
     if (!clips[id]) {
-      var integree = window.VOIX_INTEGREE && window.VOIX_INTEGREE[id];
-      var octets = integree
-        ? new Promise(function (resoudre) {
-            // Version en un seul fichier : l'enregistrement est contenu dans la page.
-            var binaire = atob(integree);
-            var tableau = new Uint8Array(binaire.length);
-            for (var i = 0; i < binaire.length; i += 1) { tableau[i] = binaire.charCodeAt(i); }
-            resoudre(tableau.buffer);
+      var place = window.VOIX_PAQUET && window.VOIX_PAQUET.index[id];
+      var octets = place
+        ? chargerPaquet().then(function (tout) {
+            // Tous les enregistrements sont réunis dans un seul fichier : on en découpe un morceau.
+            if (!tout) { throw new Error('absent'); }
+            return tout.slice(place[0], place[0] + place[1]);
           })
         : fetch('voix/' + id + '.mp3').then(function (reponse) {
             if (!reponse.ok) { throw new Error('absent'); }
@@ -1275,7 +1286,11 @@
     demarrerAudio();
     // Première parole déclenchée par le geste du joueur, pour débloquer la voix.
     if (synthese) { try { synthese.speak(new SpeechSynthesisUtterance(' ')); } catch (e) {} }
-    envoyer({ type: 'nouvelle-partie' });
+    // On attend la voix enregistrée avant de commencer, vingt secondes au plus.
+    ecrire('Chargement de la voix…');
+    Promise.race([chargerPaquet(), pause(20000)]).then(function () {
+      envoyer({ type: 'nouvelle-partie' });
+    });
   });
 
   document.addEventListener('keydown', function (evenement) {
@@ -1306,6 +1321,7 @@
   });
 
   appliquerCouleurs();
+  chargerPaquet();
   montrer('porte');
   accueil.focus();
 })();
