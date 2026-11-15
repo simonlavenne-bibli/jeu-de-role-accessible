@@ -53,6 +53,12 @@ Au premier lancement, le jeu pose à voix haute quelques questions simples et r�
 - Une salle contient un monstre, un trésor, un événement, ou rien.
 - Une intrigue se dévoile au fil des salles.
 
+### Bestiaire
+
+- Monstres : gobelin, squelette, araignée géante, loup-garou et le Murmureur.
+- Le Murmureur est une créature propre à ce donjon : une masse spectrale qui chuchote à plusieurs voix, que le joueur entend approcher de salle en salle avant de la rencontrer.
+- Boss final : un démon.
+
 ### Combat
 
 - Au tour par tour, résolu par des lancers de dés annoncés à voix haute.
