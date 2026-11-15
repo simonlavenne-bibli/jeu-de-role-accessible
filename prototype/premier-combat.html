@@ -107,7 +107,7 @@
   button:focus, button:active { outline: none; color: var(--fond); background: var(--encre); }
   #choix { display: flex; flex-direction: column; gap: 0.6rem; }
   #choix button { min-height: 4.2rem; font-size: 1.4rem; }
-  #outils { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  #outils { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
   #outils button { min-height: 3rem; font-size: 1rem; border-width: 3px; padding: 0.3rem; }
 
   #accueil {
@@ -153,7 +153,6 @@
     <button id="repeter" type="button">Répéter</button>
     <button id="point" type="button">Où j'en suis</button>
     <button id="couleurs" type="button">Couleurs</button>
-    <button id="voix" type="button">Voix</button>
   </div>
 </main>
 
@@ -161,7 +160,7 @@
   <strong>Premier combat</strong>
   <span>Un essai : une porte, une salle, un gobelin.</span>
   <span>Touche l'écran ou appuie sur Entrée pour commencer. Le jeu te parle : monte le son.</span>
-  <span>Au clavier : flèches pour choisir, Entrée pour valider, R pour répéter, P pour savoir où tu en es, C pour les couleurs, V pour la voix.</span>
+  <span>Au clavier : flèches pour choisir, Entrée pour valider, R pour répéter, P pour savoir où tu en es, C pour les couleurs.</span>
 </button>
 
 <!-- ========================================================= -->
@@ -416,13 +415,158 @@
 </script>
 
 <!-- ========================================================= -->
-<!-- 2. RENDU : textes, voix, sons, image, dés, commandes.      -->
+<!-- 2. TEXTES : toutes les phrases du jeu, dites et affichées.   -->
+<!--    Chaque phrase a un identifiant et un enregistrement.     -->
+<!-- ========================================================= -->
+<script id="textes">
+(function () {
+  'use strict';
+  var t = {};
+  var n;
+  function pv(k) { return k + (k > 1 ? ' points de vie' : ' point de vie'); }
+
+  t['intro'] = 'Le froid monte des dalles. Devant toi, une porte de chêne cloutée de fer. Derrière, quelque chose gratte la pierre.';
+  t['porte-ouverte'] = 'Tu pousses le battant. Les gonds hurlent.';
+  t['salle-entree'] = 'Une salle basse, sous une voûte noircie. Au mur, une torche agonise.';
+  t['gobelin-apparait'] = 'Dans l\'ombre, deux yeux s\'allument. Un gobelin bondit, un hachoir ébréché au poing.';
+  t['regle-combat'] = 'Le combat : chacun lance deux dés et ajoute son habileté. Le plus haut total touche l\'autre.';
+
+  for (n = 9; n <= 20; n += 1) { t['tu-fais-' + n] = 'Tu fais ' + n + '.'; }
+  for (n = 7; n <= 17; n += 1) { t['gobelin-fait-' + n] = 'Le gobelin, ' + n + '.'; }
+  t['egalite'] = 'Égalité. Les lames s\'entrechoquent.';
+  t['double-six-heros'] = 'Double six, dégâts doublés !';
+  t['double-six-gobelin'] = 'Double six pour le gobelin !';
+  t['coup-heros-1'] = 'Ta lame trouve la chair.';
+  t['coup-heros-2'] = 'Tu frappes à l\'épaule.';
+  t['coup-heros-3'] = 'Ton coup porte.';
+  t['coup-gobelin-1'] = 'Le hachoir t\'entaille le bras.';
+  t['coup-gobelin-2'] = 'Le gobelin te frappe au flanc.';
+  t['coup-gobelin-3'] = 'Tu n\'esquives pas assez vite.';
+  for (n = 1; n <= 3; n += 1) { t['gobelin-reste-' + n] = 'Il reste ' + pv(n) + ' au gobelin.'; }
+  for (n = 1; n <= 11; n += 1) { t['heros-reste-' + n] = 'Il te reste ' + pv(n) + '.'; }
+
+  for (n = 1; n <= 6; n += 1) { t['fuite-de-' + n] = 'Tu tentes de fuir : ' + n + '.'; }
+  for (n = 3; n <= 5; n += 1) { t['il-fallait-' + n] = 'Il fallait ' + n + ' ou plus.'; }
+  t['fuite-reussie'] = 'Tu recules d\'un bond et claques la porte derrière toi.';
+  t['fuite-ratee'] = 'Le gobelin te barre le passage.';
+
+  t['chance-coup-mortel'] = 'Ce coup serait le dernier.';
+  t['chance-fuite-ratee'] = 'Le coup va tomber.';
+  t['chance-reste-0'] = 'Il ne te reste aucun dé de chance.';
+  t['chance-reste-1'] = 'Il te reste 1 dé de chance.';
+  t['chance-reste-2'] = 'Il te reste 2 dés de chance.';
+  t['chance-reste-3'] = 'Il te reste 3 dés de chance.';
+  for (n = 1; n <= 6; n += 1) { t['chance-de-' + n] = 'Dé de chance : ' + n + '.'; }
+  t['chance-reussie'] = 'Le hachoir siffle à un cheveu de ta gorge.';
+  t['chance-perdue'] = 'La chance t\'abandonne.';
+
+  t['gobelin-vaincu'] = 'Le gobelin s\'effondre dans un dernier couinement. Le silence retombe.';
+  t['butin-dague'] = 'À sa ceinture, une dague à la lame encore nette. Elle te donnerait plus un en habileté.';
+  t['butin-pris'] = 'Tu glisses la dague à ta ceinture. Ton habileté passe à 8.';
+  t['butin-laisse'] = 'Tu laisses la dague où elle est.';
+  t['mort'] = 'Tes jambes cèdent. Le noir se referme sur toi.';
+  t['fin-essai'] = 'Fin de cet essai.';
+
+  for (n = 0; n <= 12; n += 1) { t['point-vie-' + n] = 'Il te reste ' + pv(n) + ' sur 12.'; }
+  t['point-arme-epee-rouillee'] = 'Tu es armé d\'une épée rouillée.';
+  t['point-arme-dague'] = 'Tu es armé d\'une dague.';
+  for (n = 1; n <= 4; n += 1) { t['gobelin-encore-' + n] = 'Le gobelin a encore ' + pv(n) + '.'; }
+
+  t['choix-ouvrir-porte'] = 'Tu peux ouvrir la porte.';
+  t['choix-attaquer-fuir'] = 'Tu peux attaquer, ou fuir.';
+  t['choix-tenter-sa-chance-renoncer'] = 'Tu peux tenter ta chance, ou renoncer.';
+  t['choix-prendre-laisser'] = 'Tu peux prendre la dague, ou la laisser.';
+  t['choix-nouvelle-partie'] = 'Tu peux rejouer.';
+
+  t['libelle-ouvrir-porte'] = 'Ouvrir la porte.';
+  t['libelle-attaquer'] = 'Attaquer.';
+  t['libelle-fuir'] = 'Fuir.';
+  t['libelle-tenter-sa-chance'] = 'Tenter ma chance.';
+  t['libelle-renoncer'] = 'Renoncer.';
+  t['libelle-prendre'] = 'Prendre la dague.';
+  t['libelle-laisser'] = 'La laisser.';
+  t['libelle-nouvelle-partie'] = 'Rejouer.';
+
+  t['couleur-blanc-sur-noir'] = 'Blanc sur noir.';
+  t['couleur-noir-sur-blanc'] = 'Noir sur blanc.';
+  t['couleur-jaune-sur-noir'] = 'Jaune sur noir.';
+  t['couleur-orange-sur-noir'] = 'Orange sur noir.';
+
+  var tirage = 0;
+  function variante(prefixe) { tirage += 1; return prefixe + (1 + tirage % 3); }
+
+  // Les deux lancers d'un assaut sont montrés ensemble, pour un combat plus rapide.
+  function regrouper(messages) {
+    var scenes = [];
+    for (var i = 0; i < messages.length; i += 1) {
+      var m = messages[i];
+      var suivant = messages[i + 1];
+      if (m.type === 'des-lances' && suivant && suivant.type === 'des-lances') {
+        scenes.push({ type: 'assaut-des', donnees: { heros: m.donnees, monstre: suivant.donnees } });
+        i += 1;
+      } else {
+        scenes.push(m);
+      }
+    }
+    return scenes;
+  }
+
+  // Chaque message du moteur devient une suite de phrases, désignées par leur identifiant.
+  function phrasesDe(message) {
+    var d = message.donnees;
+    var suite = [];
+    switch (message.type) {
+      case 'partie-commencee': return ['intro'];
+      case 'porte-ouverte': return ['porte-ouverte'];
+      case 'salle-entree': return ['salle-entree'];
+      case 'monstre-apparait': return ['gobelin-apparait'];
+      case 'assaut-des': return ['tu-fais-' + d.heros.total, 'gobelin-fait-' + d.monstre.total];
+      case 'assaut-resultat':
+        if (d.gagnant === 'egalite') { return ['egalite']; }
+        if (d.gagnant === 'heros') {
+          if (d.critique) { suite.push('double-six-heros'); }
+          suite.push(variante('coup-heros-'));
+          if (d.vieMonstre > 0) { suite.push('gobelin-reste-' + d.vieMonstre); }
+          return suite;
+        }
+        if (d.critique) { suite.push('double-six-gobelin'); }
+        suite.push(variante('coup-gobelin-'));
+        if (d.vieHeros > 0) { suite.push('heros-reste-' + d.vieHeros); }
+        return suite;
+      case 'fuite-resultat':
+        return ['fuite-de-' + d.de, 'il-fallait-' + d.seuil, d.reussie ? 'fuite-reussie' : 'fuite-ratee'];
+      case 'chance-proposee':
+        return [d.situation === 'coup-mortel' ? 'chance-coup-mortel' : 'chance-fuite-ratee', 'chance-reste-' + d.desRestants];
+      case 'chance-resultat':
+        return ['chance-de-' + d.de, 'il-fallait-' + d.seuil, d.reussie ? 'chance-reussie' : 'chance-perdue'];
+      case 'monstre-vaincu': return ['gobelin-vaincu'];
+      case 'butin-trouve': return ['butin-dague'];
+      case 'butin-pris': return ['butin-pris'];
+      case 'butin-laisse': return ['butin-laisse'];
+      case 'heros-mort': return ['mort'];
+      case 'fin-essai': return ['fin-essai'];
+      case 'etat-heros': return ['point-vie-' + d.vie, 'chance-reste-' + d.desDeChance, 'point-arme-' + d.arme];
+      case 'etat-combat': return ['gobelin-encore-' + d.vieMonstre];
+      case 'choix-proposes': return ['choix-' + d.choix.join('-')];
+    }
+    return [];
+  }
+
+  window.TEXTES = t;
+  window.PHRASES = { phrasesDe: phrasesDe, regrouper: regrouper };
+})();
+</script>
+
+<!-- ========================================================= -->
+<!-- 3. RENDU : textes, voix, sons, image, dés, commandes.      -->
 <!-- ========================================================= -->
 <script>
 (function () {
   'use strict';
 
   // ---------- Textes ----------
+  var TEXTES = window.TEXTES;
+  var phrasesDe = window.PHRASES.phrasesDe;
   var LIBELLES = {
     'ouvrir-porte': 'Ouvrir la porte',
     'attaquer': 'Attaquer',
@@ -433,80 +577,16 @@
     'laisser': 'La laisser',
     'nouvelle-partie': 'Rejouer'
   };
-  var NOMS_ARMES = { 'epee-rouillee': 'une épée rouillée', 'dague': 'une dague' };
-  var COUPS_HEROS = ['Ta lame trouve la chair.', 'Tu frappes à l\'épaule.', 'Ton coup porte.'];
-  var COUPS_MONSTRE = ['Le hachoir t\'entaille le bras.', 'Le gobelin te frappe au flanc.', 'Tu n\'esquives pas assez vite.'];
-  var REGLE_DU_COMBAT = 'Le combat : chacun lance deux dés et ajoute son habileté. Le plus haut total touche l\'autre.';
-  var tirage = 0;
 
-  function variante(liste) { tirage += 1; return liste[tirage % liste.length]; }
-  function points(n) { return n + (n > 1 ? ' points de vie' : ' point de vie'); }
-  function desDeChance(n) {
-    if (n === 0) { return 'aucun dé de chance'; }
-    return n + (n > 1 ? ' dés de chance' : ' dé de chance');
-  }
-
-  function texte(message) {
-    var d = message.donnees;
-    switch (message.type) {
-      case 'partie-commencee':
-        return 'Le froid monte des dalles. Devant toi, une porte de chêne cloutée de fer. Derrière, quelque chose gratte la pierre.';
-      case 'porte-ouverte':
-        return 'Tu pousses le battant. Les gonds hurlent.';
-      case 'salle-entree':
-        return 'Une salle basse, sous une voûte noircie. Au mur, une torche agonise.';
-      case 'monstre-apparait':
-        return 'Dans l\'ombre, deux yeux s\'allument. Un gobelin bondit, un hachoir ébréché au poing.';
-      case 'assaut-des':
-        return 'Tu fais ' + d.heros.total + '. Le gobelin, ' + d.monstre.total + '.';
-      case 'assaut-resultat':
-        if (d.gagnant === 'egalite') { return 'Égalité. Les lames s\'entrechoquent.'; }
-        if (d.gagnant === 'heros') {
-          return (d.critique ? 'Double six, dégâts doublés ! ' : '') + variante(COUPS_HEROS) +
-            (d.vieMonstre > 0 ? ' Il reste ' + points(d.vieMonstre) + ' au gobelin.' : '');
-        }
-        return (d.critique ? 'Double six pour le gobelin ! ' : '') + variante(COUPS_MONSTRE) +
-          (d.vieHeros > 0 ? ' Il te reste ' + points(d.vieHeros) + '.' : '');
-      case 'fuite-resultat':
-        return 'Tu tentes de fuir : ' + d.de + '. Il fallait ' + d.seuil + ' ou plus.' +
-          (d.reussie
-            ? ' Tu recules d\'un bond et claques la porte derrière toi.'
-            : ' Le gobelin te barre le passage.');
-      case 'chance-proposee':
-        return (d.situation === 'coup-mortel' ? 'Ce coup serait le dernier.' : 'Le coup va tomber.') +
-          ' Il te reste ' + desDeChance(d.desRestants) + '.';
-      case 'chance-resultat':
-        return 'Dé de chance : ' + d.de + '. Il fallait ' + d.seuil + ' ou plus.' +
-          (d.reussie ? ' Le hachoir siffle à un cheveu de ta gorge.' : ' La chance t\'abandonne.');
-      case 'monstre-vaincu':
-        return 'Le gobelin s\'effondre dans un dernier couinement. Le silence retombe.';
-      case 'butin-trouve':
-        return 'À sa ceinture, une dague à la lame encore nette. Elle te donnerait plus un en habileté.';
-      case 'butin-pris':
-        return 'Tu glisses la dague à ta ceinture. Ton habileté passe à ' + d.habilete + '.';
-      case 'butin-laisse':
-        return 'Tu laisses la dague où elle est.';
-      case 'heros-mort':
-        return 'Tes jambes cèdent. Le noir se referme sur toi.';
-      case 'fin-essai':
-        return 'Fin de cet essai.';
-      case 'etat-heros':
-        return 'Il te reste ' + points(d.vie) + ' sur ' + d.vieMax + ', et ' + desDeChance(d.desDeChance) +
-          '. Tu es armé d\'' + NOMS_ARMES[d.arme] + '.';
-      case 'etat-combat':
-        return 'Le gobelin a encore ' + points(d.vieMonstre) + '.';
-      case 'choix-proposes':
-        var noms = d.choix.map(function (id) { return LIBELLES[id].toLowerCase(); });
-        return 'Tu peux ' + noms.join(', ou ') + '.';
-    }
-    return '';
-  }
+  function lire(id) { return TEXTES[id] || ''; }
 
   // ---------- Sons : tout est fabriqué par le jeu ----------
   var audio = null;
   var sortie = null;
   var ambiance = null;
   var bruit = null;
+  var gainVoix = null;
+  var sourceVoix = null;
 
   function creerBruit() {
     var longueur = audio.sampleRate;
@@ -637,6 +717,9 @@
       ambiance = audio.createGain();
       ambiance.gain.value = 0.1;
       ambiance.connect(sortie);
+      gainVoix = audio.createGain();
+      gainVoix.gain.value = 1;
+      gainVoix.connect(audio.destination);
       [110, 110.7, 164.5].forEach(function (f) {
         var o = audio.createOscillator();
         var g = audio.createGain();
@@ -660,6 +743,7 @@
       niveau.connect(ambiance);
       vent.start();
       setTimeout(goutte, 2500);
+      prechargerClips();
       if (audio.state === 'suspended') { audio.resume(); }
     } catch (e) {
       audio = null;
@@ -703,7 +787,8 @@
 
   function pause(ms) { return new Promise(function (resoudre) { setTimeout(resoudre, ms); }); }
 
-  function dire(phrase) {
+  // Secours : la voix de synthèse du navigateur, si un enregistrement manque.
+  function direSynthese(phrase) {
     return new Promise(function (resoudre) {
       var lecture = 600 + phrase.length * 45;
       if (voixMuette) { setTimeout(resoudre, lecture); return; }
@@ -745,7 +830,80 @@
     });
   }
 
+  // Voix enregistrée : un fichier par phrase, dans le dossier voix/.
+  var clips = {};
+
+  function decoder(octets) {
+    return new Promise(function (resoudre, rejeter) { audio.decodeAudioData(octets, resoudre, rejeter); });
+  }
+
+  function chargerClip(id) {
+    if (!clips[id]) {
+      var integree = window.VOIX_INTEGREE && window.VOIX_INTEGREE[id];
+      var octets = integree
+        ? new Promise(function (resoudre) {
+            // Version en un seul fichier : l'enregistrement est contenu dans la page.
+            var binaire = atob(integree);
+            var tableau = new Uint8Array(binaire.length);
+            for (var i = 0; i < binaire.length; i += 1) { tableau[i] = binaire.charCodeAt(i); }
+            resoudre(tableau.buffer);
+          })
+        : fetch('voix/' + id + '.mp3').then(function (reponse) {
+            if (!reponse.ok) { throw new Error('absent'); }
+            return reponse.arrayBuffer();
+          });
+      clips[id] = octets.then(decoder).catch(function () { return null; });
+    }
+    return clips[id];
+  }
+
+  function prechargerClips() {
+    var ids = Object.keys(TEXTES);
+    var suivant = 0;
+    function avancer() {
+      if (suivant >= ids.length) { return; }
+      var id = ids[suivant];
+      suivant += 1;
+      chargerClip(id).then(avancer);
+    }
+    for (var i = 0; i < 4; i += 1) { avancer(); }
+  }
+
+  function jouerClip(tampon) {
+    return new Promise(function (resoudre) {
+      var termine = false;
+      var source = audio.createBufferSource();
+      function finir() {
+        if (termine) { return; }
+        termine = true;
+        clearTimeout(garde);
+        if (sourceVoix === source) { sourceVoix = null; }
+        baisserAmbiance(false);
+        resoudre();
+      }
+      var garde = setTimeout(finir, tampon.duration * 1000 + 800);
+      source.buffer = tampon;
+      source.connect(gainVoix);
+      source.onended = finir;
+      sourceVoix = source;
+      baisserAmbiance(true);
+      try { source.start(); } catch (e) { finir(); }
+    });
+  }
+
+  async function dire(id) {
+    var phrase = lire(id);
+    if (!phrase) { console.error('Phrase manquante : ' + id); return; }
+    var tampon = null;
+    if (audio) {
+      tampon = await Promise.race([chargerClip(id), pause(3000).then(function () { return null; })]);
+    }
+    if (tampon) { return jouerClip(tampon); }
+    return direSynthese(phrase);
+  }
+
   function taire() {
+    if (sourceVoix) { try { sourceVoix.stop(); } catch (e) {} }
     if (synthese) { try { synthese.cancel(); } catch (e) {} }
   }
 
@@ -863,6 +1021,7 @@
       var b = document.createElement('button');
       b.type = 'button';
       b.textContent = LIBELLES[id];
+      b.setAttribute('data-id', id);
       b.addEventListener('click', function () { envoyer({ type: 'choisir', id: id }); });
       zoneChoix.appendChild(b);
     });
@@ -1039,22 +1198,6 @@
     }
   }
 
-  // Les deux lancers d'un assaut sont montrés ensemble, pour un combat plus rapide.
-  function regrouper(messages) {
-    var scenes = [];
-    for (var i = 0; i < messages.length; i += 1) {
-      var m = messages[i];
-      var suivant = messages[i + 1];
-      if (m.type === 'des-lances' && suivant && suivant.type === 'des-lances') {
-        scenes.push({ type: 'assaut-des', donnees: { heros: m.donnees, monstre: suivant.donnees } });
-        i += 1;
-      } else {
-        scenes.push(m);
-      }
-    }
-    return scenes;
-  }
-
   var moteur = window.MOTEUR.creerMoteur(Date.now());
   var tour = 0;
   var dernieresPhrases = [];
@@ -1068,29 +1211,29 @@
     if (monTour !== tour) { return; }
     zoneTexte.textContent = '';
     dernieresPhrases = [];
-    var scenes = regrouper(messages);
+    var scenes = window.PHRASES.regrouper(messages);
     for (var i = 0; i < scenes.length; i += 1) {
       var m = scenes[i];
       if (m.type === 'choix-proposes') { afficherChoix(m.donnees.choix); }
       if (Object.prototype.hasOwnProperty.call(IMAGE_PAR_MESSAGE, m.type)) { montrer(IMAGE_PAR_MESSAGE[m.type]); }
       await mettreEnScene(m, monTour);
       if (monTour !== tour) { return; }
-      var phrases = [texte(m)];
+      var ids = phrasesDe(m);
       if (m.type === 'monstre-apparait' && !regleExpliquee) {
         regleExpliquee = true;
-        phrases.push(REGLE_DU_COMBAT);
+        ids.push('regle-combat');
       }
       if (m.type === 'choix-proposes') {
         // Les choix ne sont redits que lorsqu'ils changent.
         var cle = m.donnees.choix.join(',');
         if (cle === choixAnnonces) { continue; }
         choixAnnonces = cle;
+      } else if (ids.length) {
+        ecrire(ids.map(lire).join(' '));
       }
-      for (var p = 0; p < phrases.length; p += 1) {
-        if (!phrases[p]) { continue; }
-        if (m.type !== 'choix-proposes') { ecrire(phrases[p]); }
-        dernieresPhrases.push(phrases[p]);
-        await dire(phrases[p]);
+      for (var p = 0; p < ids.length; p += 1) {
+        dernieresPhrases.push(ids[p]);
+        await dire(ids[p]);
         if (monTour !== tour) { return; }
       }
     }
@@ -1117,27 +1260,15 @@
   // ---------- Commandes ----------
   document.getElementById('repeter').addEventListener('click', function () { redire(dernieresPhrases.slice()); });
   document.getElementById('point').addEventListener('click', function () {
-    var phrases = moteur.executer({ type: 'faire-le-point' }).map(texte).filter(Boolean);
-    redire(phrases);
+    var ids = [];
+    moteur.executer({ type: 'faire-le-point' }).forEach(function (m) { ids = ids.concat(phrasesDe(m)); });
+    redire(ids);
   });
   document.getElementById('couleurs').addEventListener('click', function () {
     couleur = (couleur + 1) % COULEURS.length;
     appliquerCouleurs();
-    redire([COULEURS[couleur][1]]);
+    redire(['couleur-' + COULEURS[couleur][0]]);
   });
-  document.getElementById('voix').addEventListener('click', function () {
-    if (!voixFrancaises.length) { listerVoix(); }
-    if (!voixFrancaises.length) {
-      avertir('Aucune voix française trouvée sur cet appareil.');
-      return;
-    }
-    if (voixFrancaises.length > 1) { indiceVoix = (indiceVoix + 1) % voixFrancaises.length; }
-    var nom = voixFrancaises[indiceVoix].name;
-    try { localStorage.setItem('voix', nom); } catch (e) {}
-    avertir('Voix ' + (indiceVoix + 1) + ' sur ' + voixFrancaises.length + ' : ' + nom);
-    redire(['Voix ' + (indiceVoix + 1) + ' sur ' + voixFrancaises.length + '. Le froid monte des dalles.']);
-  });
-
   var accueil = document.getElementById('accueil');
   accueil.addEventListener('click', function () {
     accueil.hidden = true;
@@ -1159,20 +1290,19 @@
       position = position === -1 ? (sens === 1 ? 0 : boutons.length - 1) : (position + sens + boutons.length) % boutons.length;
       boutons[position].focus();
       jouerSon('bip');
-      redire([boutons[position].textContent]);
+      redire(['libelle-' + boutons[position].getAttribute('data-id')]);
       return;
     }
     if (touche === 'Enter' && boutons.indexOf(document.activeElement) === -1 && boutons.length) {
       evenement.preventDefault();
       boutons[0].focus();
       jouerSon('bip');
-      redire([boutons[0].textContent]);
+      redire(['libelle-' + boutons[0].getAttribute('data-id')]);
       return;
     }
     if (touche === 'r' || touche === 'R') { document.getElementById('repeter').click(); }
     if (touche === 'p' || touche === 'P') { document.getElementById('point').click(); }
     if (touche === 'c' || touche === 'C') { document.getElementById('couleurs').click(); }
-    if (touche === 'v' || touche === 'V') { document.getElementById('voix').click(); }
   });
 
   appliquerCouleurs();
