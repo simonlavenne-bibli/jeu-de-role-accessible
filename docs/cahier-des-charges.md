@@ -99,6 +99,19 @@ Règles :
 - Chaque image est stockée une seule fois ; la couleur est appliquée par le jeu selon le réglage choisi.
 - Les illustrations renforcent l'ambiance mais ne portent aucune information indispensable.
 
+### Règles de style
+
+- Silhouettes franches : le sujet se détache nettement du fond.
+- Contre-jour ou une seule source de lumière.
+- Peu de détails, pas de dégradés fins.
+- Aucune information portée par la couleur.
+- Un seul sujet par image (une porte, un monstre, un objet).
+
+### Fabrication
+
+- Les images sont générées en noir et blanc à fort contraste, puis converties en monochrome par un script du projet.
+- Chaque image est vérifiée dans les quatre couleurs avant d'être retenue ; celles qui restent illisibles sont refaites.
+
 ## 9. Commandes
 
 - **Clavier :** flèches pour parcourir les choix, Entrée pour valider, raccourcis pour répéter, faire le point et ouvrir les réglages.
