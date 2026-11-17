@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jeu de rôle accessible — Accueil</title>
+<style>
+  :root { --fond: #000; --encre: #fff; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fond);
+    color: var(--encre);
+    font-family: Verdana, "DejaVu Sans", system-ui, sans-serif;
+    font-size: 1.2rem;
+    line-height: 1.5;
+  }
+  main { max-width: 42rem; margin: 0 auto; padding: 1rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 0.8rem; }
+  p { margin: 0 0 0.7rem; }
+  ul { list-style: none; margin: 1rem 0; padding: 0; }
+  li { margin: 0 0 0.8rem; }
+  a {
+    display: block;
+    color: var(--encre);
+    background: var(--fond);
+    border: 4px solid var(--encre);
+    padding: 0.6rem 0.8rem;
+    min-height: 3.6rem;
+    font-weight: bold;
+    text-decoration: none;
+  }
+  a:focus, a:hover { outline: 4px dashed var(--encre); outline-offset: 3px; }
+  .detail { display: block; font-weight: normal; font-size: 1rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Jeu de rôle accessible</h1>
+  <p>Un jeu de rôle en ligne pour les personnes aveugles et malvoyantes.</p>
+  <nav aria-label="Pages du jeu">
+    <ul>
+      <li>
+        <a href="essais/combats.html">
+          Essai des combats
+          <span class="detail">Version texte seul, en cours de test.</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+</main>
+</body>
+</html>
