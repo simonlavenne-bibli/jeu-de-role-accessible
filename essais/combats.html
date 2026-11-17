@@ -66,12 +66,13 @@
 <!-- ============================ ACCUEIL ============================ -->
 <section id="accueil" aria-labelledby="titre-accueil">
   <h1 id="titre-accueil">Essai des combats</h1>
-  <p>Cette page compare deux façons de combattre aux dés, en texte seul, sans image ni son. Choisis un système et un adversaire, puis joue.</p>
+  <p>Cette page compare trois façons de combattre aux dés, en texte seul, sans image ni son. Choisis un système et un adversaire, puis joue.</p>
 
   <fieldset>
     <legend>Système de combat</legend>
     <label><input type="radio" name="systeme" value="A" checked> A : relance risquée</label>
     <label><input type="radio" name="systeme" value="B"> B : garder et relancer (inspiré de King of Tokyo)</label>
+    <label><input type="radio" name="systeme" value="C"> C : lire le monstre</label>
   </fieldset>
 
   <fieldset>
@@ -130,6 +131,12 @@
       nom: 'le squelette', Nom: 'Le squelette',
       A: { habilete: 7, vie: 6, degats: 2, fuite: 4 },
       B: { vie: 6, force: 3, fuite: 4 },
+      C: { habilete: 7, vie: 6, degats: 2, fuite: 4 },
+      signes: {
+        bondir: ['Il lève son épée à deux mains au-dessus de son crâne.', 'Ses genoux d\'os se plient, il prend son élan.'],
+        proteger: ['Il se replie derrière son bouclier fendu.', 'Il recule d\'un pas, le bouclier levé.'],
+        tourner: ['Il glisse sur le côté, la pointe de l\'épée basse.', 'Sa tête pivote lentement, il cherche une faille.']
+      },
       entree: 'Au fond de la salle, un squelette se redresse dans un cliquetis sec. Il lève une épée ébréchée.',
       touche: ['Ta lame fait voler une côte.', 'Tu brises une vertèbre.', 'Ton coup fend son bouclier.'],
       frappe: ['Son épée s\'abat sur ton épaule.', 'La lame rouillée t\'entaille le bras.', 'Il te frappe au flanc.'],
@@ -139,6 +146,12 @@
       nom: 'le loup-garou', Nom: 'Le loup-garou',
       A: { habilete: 8, vie: 8, degats: 2, fuite: 5 },
       B: { vie: 8, force: 4, fuite: 5 },
+      C: { habilete: 8, vie: 8, degats: 3, fuite: 5 },
+      signes: {
+        bondir: ['Il se ramasse sur ses pattes arrière.', 'Ses griffes raclent la pierre, ses épaules se tendent.'],
+        proteger: ['Il gronde et recule, les oreilles plaquées.', 'Il baisse la tête et se met hors de portée.'],
+        tourner: ['Il tourne autour de toi, tête basse.', 'Il trotte de gauche à droite sans te quitter des yeux.']
+      },
       entree: 'Un grondement roule sous la voûte. Un loup-garou se déplie, le poil hérissé, les crocs luisants.',
       touche: ['Tu lui ouvres le flanc.', 'Ta lame le cueille à l\'épaule.', 'Tu frappes sa patte avant.'],
       frappe: ['Ses griffes te labourent la poitrine.', 'Ses crocs se referment sur ton bras.', 'Il te renverse d\'un coup d\'épaule.'],
@@ -148,6 +161,12 @@
       nom: 'le démon', Nom: 'Le démon',
       A: { habilete: 9, vie: 10, degats: 3, fuite: 6 },
       B: { vie: 10, force: 5, fuite: 6 },
+      C: { habilete: 9, vie: 10, degats: 4, fuite: 6 },
+      signes: {
+        bondir: ['Ses ailes se déploient d\'un coup.', 'Il plie les jambes et ses ailes battent une fois.'],
+        proteger: ['Il croise les bras devant sa poitrine, les écailles hérissées.', 'Il replie ses ailes autour de lui comme un manteau.'],
+        tourner: ['Sa queue fouette l\'air, il te jauge.', 'Il fait le tour du trône à pas lents.']
+      },
       entree: 'La chaleur devient insoutenable. Un démon cornu déploie ses ailes au-dessus d\'un trône brisé.',
       touche: ['Ta lame entaille son aile.', 'Tu frappes sous la cuirasse d\'écailles.', 'Ton coup fait jaillir une gerbe de braises.'],
       frappe: ['Son poing de pierre t\'écrase l\'épaule.', 'Sa queue te fouette les jambes.', 'Ses griffes brûlantes te lacèrent.'],
@@ -248,14 +267,14 @@
       chances: HEROS.desDeChance,
       vieMonstre: monstre[systeme].vie,
       tours: 0,
-      decisions: { relances: 0, encaisse: 0, arrets: 0, trebuche: 0, chancesUtilisees: 0, chancesReussies: 0, fuites: 0 },
+      decisions: { bonnesLectures: 0, lectures: 0, relances: 0, encaisse: 0, arrets: 0, trebuche: 0, chancesUtilisees: 0, chancesReussies: 0, fuites: 0 },
       trace: []
     };
     ecranAccueil.hidden = true;
     ecranCombat.hidden = false;
     zoneDes.hidden = true;
-    document.getElementById('titre-combat').textContent =
-      'Combat ' + (systeme === 'A' ? 'A, relance risquée' : 'B, garder et relancer') + ', contre ' + monstre.nom;
+    var noms = { A: 'A, relance risquée', B: 'B, garder et relancer', C: 'C, lire le monstre' };
+    document.getElementById('titre-combat').textContent = 'Combat ' + noms[systeme] + ', contre ' + monstre.nom;
     raconter(reglesDuSysteme().concat([monstre.entree]));
     proposer([['Commencer le combat', tourSuivant]]);
   }
@@ -265,6 +284,15 @@
     var chance = 'Si un coup doit te tuer, tu peux lancer un dé de chance : sur ' + partie.seuilChance +
       ' ou plus, tu l\'évites. Si tu échoues, tu peux en lancer un autre, tant qu\'il t\'en reste.';
     var fuite = 'Fuir : tu lances un dé, il faut ' + r.fuite + ' ou plus. Si tu échoues, ' + partie.monstre.nom + ' frappe sans riposte.';
+    if (partie.systeme === 'C') {
+      return [
+        'Règles. Avant chaque assaut, ' + partie.monstre.nom + ' fait un geste qui annonce son intention : bondir sur toi, se protéger, ou tourner autour de toi pour chercher une ouverture. À toi de deviner laquelle.',
+        'Tu choisis alors ta posture. Esquiver contre un bond, attaquer quand il se protège, parer quand il cherche une ouverture : la bonne posture ajoute 3 à ton total.',
+        'Puis chacun lance deux dés et ajoute son habileté : 7 pour toi, ' + r.habilete + ' pour ' + partie.monstre.nom + '. Le plus haut total touche.',
+        'Tes coups retirent 2 points de vie, 3 si tu as choisi d\'attaquer. Ses coups retirent ' + pv(r.degats) + ', le double s\'il bondit et que tu n\'esquives pas, 1 de moins si tu pares. Quand il se protège, il ne frappe pas.',
+        chance, fuite
+      ];
+    }
     if (partie.systeme === 'A') {
       return [
         'Règles. Chacun lance deux dés et ajoute son habileté : 7 pour toi, ' + r.habilete + ' pour ' + partie.monstre.nom + '. Le plus haut total touche et retire ' + pv(r.degats) + ' (2 pour toi).',
@@ -283,7 +311,7 @@
 
   function tourSuivant() {
     partie.tours += 1;
-    if (partie.systeme === 'A') { tourA(); } else { tourB(); }
+    if (partie.systeme === 'A') { tourA(); } else if (partie.systeme === 'B') { tourB(); } else { tourC(); }
   }
 
   function choixDuTour() {
@@ -339,7 +367,7 @@
       terminer('fuite');
       return;
     }
-    var degats = partie.systeme === 'A' ? r.degats : r.force;
+    var degats = partie.systeme === 'B' ? r.force : r.degats;
     subir(degats, [lu, partie.monstre.Nom + ' te barre le passage. ' + au(partie.monstre.frappe)], tourSuivant);
   }
 
@@ -570,9 +598,74 @@
   }
 
   // =====================================================================
+  // SYSTÈME C : lire le monstre
+  // =====================================================================
+  var POSTURE_JUSTE = { bondir: 'esquiver', proteger: 'attaquer', tourner: 'parer' };
+  var INTENTIONS = { bondir: 'Il voulait bondir.', proteger: 'Il voulait se protéger.', tourner: 'Il cherchait une ouverture.' };
+
+  function tourC() {
+    var intentions = ['bondir', 'proteger', 'tourner'];
+    var intention = intentions[Math.floor(Math.random() * 3)];
+    var signe = au(partie.monstre.signes[intention]);
+    raconter(['Assaut ' + partie.tours + '.', signe]);
+    proposer([
+      ['Attaquer', function () { assautC(intention, 'attaquer'); }],
+      ['Esquiver', function () { assautC(intention, 'esquiver'); }],
+      ['Parer', function () { assautC(intention, 'parer'); }],
+      ['Fuir', fuir]
+    ]);
+  }
+
+  function assautC(intention, posture) {
+    var r = partie.regles;
+    var juste = POSTURE_JUSTE[intention] === posture;
+    partie.decisions.lectures += 1;
+    if (juste) { partie.decisions.bonnesLectures += 1; }
+    var dh = [de(), de()];
+    var dm = [de(), de()];
+    var bonus = juste ? 3 : 0;
+    var th = dh[0] + dh[1] + HEROS.habilete + bonus;
+    var tm = dm[0] + dm[1] + r.habilete;
+    var phrases = [
+      INTENTIONS[intention] + (juste ? ' Bonne lecture : plus 3.' : ' Mauvaise lecture.'),
+      'Tu lances ' + dh[0] + ' et ' + dh[1] + '. Total : ' + th + '.',
+      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Total : ' + tm + '.'
+    ];
+    if (th > tm) {
+      var inflige = 2 + (posture === 'attaquer' ? 1 : 0);
+      partie.vieMonstre -= inflige;
+      phrases.push(au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd ' + pv(inflige) + '.');
+      if (partie.vieMonstre <= 0) { vaincre(phrases); return; }
+      raconter(phrases);
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    if (th === tm) {
+      raconter(phrases.concat(['Égalité. Personne n\'est touché.']));
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    if (intention === 'proteger') {
+      raconter(phrases.concat(['Tu ne passes pas sa garde, mais il ne riposte pas.']));
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    var degats = r.degats;
+    var precision = '';
+    if (intention === 'bondir' && posture !== 'esquiver') { degats *= 2; precision = ' Son bond double les dégâts.'; }
+    if (posture === 'parer') { degats -= 1; precision += ' Ta parade en retire 1.'; }
+    if (degats <= 0) {
+      raconter(phrases.concat(['Ta parade bloque tout le coup.']));
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    subir(degats, phrases.concat([au(partie.monstre.frappe) + precision]), tourSuivant);
+  }
+
+  // =====================================================================
   // FIN DE COMBAT, BILAN ET JOURNAL
   // =====================================================================
-  var bilan = { A: { victoire: 0, mort: 0, fuite: 0 }, B: { victoire: 0, mort: 0, fuite: 0 } };
+  var bilan = { A: { victoire: 0, mort: 0, fuite: 0 }, B: { victoire: 0, mort: 0, fuite: 0 }, C: { victoire: 0, mort: 0, fuite: 0 } };
 
   function terminer(issue) {
     var d = partie.decisions;
@@ -581,8 +674,9 @@
     var ligne = heure + ' · Système ' + partie.systeme + ' · ' + partie.monstre.nom +
       ' · chance ' + partie.seuilChance + '+ · ' + issue +
       ' en ' + partie.tours + ' tour(s) · vie ' + Math.max(0, partie.vie) + '/' + HEROS.vie +
-      ' · relances ' + d.relances +
-      (partie.systeme === 'A' ? ' · encaissé ' + d.encaisse : ' · arrêts ' + d.arrets + ' · trébuché ' + d.trebuche) +
+      (partie.systeme === 'A' ? ' · relances ' + d.relances + ' · encaissé ' + d.encaisse :
+        partie.systeme === 'B' ? ' · relances ' + d.relances + ' · arrêts ' + d.arrets + ' · trébuché ' + d.trebuche :
+        ' · bonnes lectures ' + d.bonnesLectures + '/' + d.lectures) +
       ' · dés de chance ' + d.chancesReussies + '/' + d.chancesUtilisees + ' réussis · fuites tentées ' + d.fuites;
     zoneJournal.value = (zoneJournal.value ? zoneJournal.value + '\n' : '') + ligne;
     sauverJournal();
@@ -602,7 +696,7 @@
 
   function afficherBilan() {
     var morceaux = [];
-    ['A', 'B'].forEach(function (s) {
+    ['A', 'B', 'C'].forEach(function (s) {
       var b = bilan[s];
       var total = b.victoire + b.mort + b.fuite;
       if (total) {
