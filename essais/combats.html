@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essai des combats — texte seul</title>
+<style>
+  :root { --fond: #000; --encre: #fff; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fond);
+    color: var(--encre);
+    font-family: Verdana, "DejaVu Sans", system-ui, sans-serif;
+    font-size: 1.2rem;
+    line-height: 1.5;
+  }
+  main { max-width: 42rem; margin: 0 auto; padding: 1rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 0.8rem; }
+  h2 { font-size: 1.25rem; margin: 1.2rem 0 0.5rem; }
+  p { margin: 0 0 0.7rem; }
+  ul { margin: 0 0 0.7rem; padding-left: 1.3rem; }
+  fieldset { border: 3px solid var(--encre); margin: 0 0 1rem; padding: 0.6rem 0.8rem; }
+  legend { font-weight: bold; padding: 0 0.3rem; }
+  label { display: block; padding: 0.35rem 0; }
+  input[type="radio"] { width: 1.3rem; height: 1.3rem; vertical-align: middle; margin-right: 0.5rem; }
+  button {
+    font: inherit;
+    font-weight: bold;
+    color: var(--encre);
+    background: var(--fond);
+    border: 4px solid var(--encre);
+    border-radius: 0;
+    padding: 0.6rem 0.8rem;
+    min-height: 3.6rem;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+  }
+  button:focus { outline: 4px dashed var(--encre); outline-offset: 3px; }
+  button:active { background: var(--encre); color: var(--fond); }
+  button[disabled] { opacity: 0.55; cursor: default; }
+  #etat {
+    border: 3px solid var(--encre);
+    padding: 0.5rem 0.8rem;
+    font-weight: bold;
+    margin-bottom: 0.8rem;
+  }
+  #recit { min-height: 6rem; margin-bottom: 0.8rem; }
+  #recit:focus { outline: 3px dashed var(--encre); outline-offset: 4px; }
+  #recit p:last-child { font-weight: bold; }
+  #des { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.8rem; }
+  #des button { text-align: center; min-height: 4.6rem; padding: 0.3rem; }
+  #des button[aria-pressed="true"] { background: var(--encre); color: var(--fond); }
+  #des .face { display: block; font-size: 1.6rem; }
+  #des .sens { display: block; font-size: 0.85rem; font-weight: normal; }
+  #choix { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
+  #journal { width: 100%; min-height: 10rem; font: inherit; font-size: 0.95rem; background: var(--fond); color: var(--encre); border: 3px solid var(--encre); padding: 0.5rem; }
+  .discret { font-size: 1rem; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+
+<!-- ============================ ACCUEIL ============================ -->
+<section id="accueil" aria-labelledby="titre-accueil">
+  <h1 id="titre-accueil">Essai des combats</h1>
+  <p>Cette page compare trois façons de combattre aux dés, en texte seul, sans image ni son. Choisis un système et un adversaire, puis joue.</p>
+
+  <fieldset>
+    <legend>Système de combat</legend>
+    <label><input type="radio" name="systeme" value="A" checked> A : relance risquée</label>
+    <label><input type="radio" name="systeme" value="B"> B : garder et relancer (inspiré de King of Tokyo)</label>
+    <label><input type="radio" name="systeme" value="C"> C : lire le monstre</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Adversaire</legend>
+    <label><input type="radio" name="monstre" value="squelette"> Squelette (facile)</label>
+    <label><input type="radio" name="monstre" value="loup-garou" checked> Loup-garou (moyen)</label>
+    <label><input type="radio" name="monstre" value="demon"> Démon (difficile)</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Dé de chance : réussite à partir de</legend>
+    <label><input type="radio" name="seuil-chance" value="4" checked> 4 ou plus</label>
+    <label><input type="radio" name="seuil-chance" value="5"> 5 ou plus</label>
+  </fieldset>
+
+  <button id="commencer" type="button">Lire les règles et commencer</button>
+
+  <h2>Résultats de cette séance</h2>
+  <p id="bilan" class="discret">Aucun combat joué pour l'instant.</p>
+</section>
+
+<!-- ============================ COMBAT ============================ -->
+<section id="combat" hidden aria-labelledby="titre-combat">
+  <h1 id="titre-combat">Combat</h1>
+  <p id="etat"></p>
+  <div id="recit" tabindex="-1"></div>
+  <div id="des" hidden></div>
+  <div id="choix"></div>
+</section>
+
+<!-- ============================ JOURNAL ============================ -->
+<section aria-labelledby="titre-journal">
+  <h2 id="titre-journal">Journal des combats</h2>
+  <p class="discret">Chaque combat terminé s'ajoute ici. Copie le journal et envoie-le après la séance de test.</p>
+  <textarea id="journal" readonly aria-label="Journal des combats"></textarea>
+  <div id="outils-journal" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.5rem;">
+    <button id="copier" type="button">Copier le journal</button>
+    <button id="effacer" type="button">Effacer le journal</button>
+  </div>
+  <p id="info-copie" class="discret" role="status"></p>
+</section>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // =====================================================================
+  // RÉGLAGES : héros, adversaires. Modifier ici pour équilibrer.
+  // =====================================================================
+  var HEROS = { vie: 12, habilete: 7, desDeChance: 3 };
+
+  var MONSTRES = {
+    'squelette': {
+      nom: 'le squelette', Nom: 'Le squelette',
+      A: { habilete: 7, vie: 6, degats: 2, fuite: 4 },
+      B: { vie: 6, force: 3, fuite: 4 },
+      C: { habilete: 7, vie: 6, degats: 2, fuite: 4 },
+      signes: {
+        bondir: ['Il lève son épée à deux mains au-dessus de son crâne.', 'Ses genoux d\'os se plient, il prend son élan.'],
+        proteger: ['Il se replie derrière son bouclier fendu.', 'Il recule d\'un pas, le bouclier levé.'],
+        tourner: ['Il glisse sur le côté, la pointe de l\'épée basse.', 'Sa tête pivote lentement, il cherche une faille.']
+      },
+      entree: 'Au fond de la salle, un squelette se redresse dans un cliquetis sec. Il lève une épée ébréchée.',
+      touche: ['Ta lame fait voler une côte.', 'Tu brises une vertèbre.', 'Ton coup fend son bouclier.'],
+      frappe: ['Son épée s\'abat sur ton épaule.', 'La lame rouillée t\'entaille le bras.', 'Il te frappe au flanc.'],
+      mort: 'Ses os s\'effondrent en tas sur les dalles.'
+    },
+    'loup-garou': {
+      nom: 'le loup-garou', Nom: 'Le loup-garou',
+      A: { habilete: 8, vie: 8, degats: 2, fuite: 5 },
+      B: { vie: 8, force: 4, fuite: 5 },
+      C: { habilete: 8, vie: 8, degats: 3, fuite: 5 },
+      signes: {
+        bondir: ['Il se ramasse sur ses pattes arrière.', 'Ses griffes raclent la pierre, ses épaules se tendent.'],
+        proteger: ['Il gronde et recule, les oreilles plaquées.', 'Il baisse la tête et se met hors de portée.'],
+        tourner: ['Il tourne autour de toi, tête basse.', 'Il trotte de gauche à droite sans te quitter des yeux.']
+      },
+      entree: 'Un grondement roule sous la voûte. Un loup-garou se déplie, le poil hérissé, les crocs luisants.',
+      touche: ['Tu lui ouvres le flanc.', 'Ta lame le cueille à l\'épaule.', 'Tu frappes sa patte avant.'],
+      frappe: ['Ses griffes te labourent la poitrine.', 'Ses crocs se referment sur ton bras.', 'Il te renverse d\'un coup d\'épaule.'],
+      mort: 'Le loup-garou s\'écroule avec un dernier râle.'
+    },
+    'demon': {
+      nom: 'le démon', Nom: 'Le démon',
+      A: { habilete: 9, vie: 10, degats: 3, fuite: 6 },
+      B: { vie: 10, force: 5, fuite: 6 },
+      C: { habilete: 9, vie: 10, degats: 4, fuite: 6 },
+      signes: {
+        bondir: ['Ses ailes se déploient d\'un coup.', 'Il plie les jambes et ses ailes battent une fois.'],
+        proteger: ['Il croise les bras devant sa poitrine, les écailles hérissées.', 'Il replie ses ailes autour de lui comme un manteau.'],
+        tourner: ['Sa queue fouette l\'air, il te jauge.', 'Il fait le tour du trône à pas lents.']
+      },
+      entree: 'La chaleur devient insoutenable. Un démon cornu déploie ses ailes au-dessus d\'un trône brisé.',
+      touche: ['Ta lame entaille son aile.', 'Tu frappes sous la cuirasse d\'écailles.', 'Ton coup fait jaillir une gerbe de braises.'],
+      frappe: ['Son poing de pierre t\'écrase l\'épaule.', 'Sa queue te fouette les jambes.', 'Ses griffes brûlantes te lacèrent.'],
+      mort: 'Le démon s\'effondre et se dissout en cendres.'
+    }
+  };
+
+  var SEUIL_TREBUCHE = 3;      // nombre de crânes qui font trébucher (système B)
+  var LANCERS_MAX = 3;         // lancers par tour (système B)
+  var NB_DES_B = 6;            // dés lancés par tour (système B)
+
+  // =====================================================================
+  // OUTILS
+  // =====================================================================
+  function de() { return 1 + Math.floor(Math.random() * 6); }
+  function au(liste) { return liste[Math.floor(Math.random() * liste.length)]; }
+  function pv(n) { return n + (n > 1 ? ' points de vie' : ' point de vie'); }
+  function pluriel(n, un, plusieurs) { return n + ' ' + (n > 1 ? plusieurs : un); }
+  function liste(valeurs) {
+    if (valeurs.length <= 1) { return valeurs.join(''); }
+    return valeurs.slice(0, -1).join(', ') + ' et ' + valeurs[valeurs.length - 1];
+  }
+  function lireRadio(nom) {
+    var choisi = document.querySelector('input[name="' + nom + '"]:checked');
+    return choisi ? choisi.value : null;
+  }
+
+  // =====================================================================
+  // ÉCRAN
+  // =====================================================================
+  var ecranAccueil = document.getElementById('accueil');
+  var ecranCombat = document.getElementById('combat');
+  var zoneEtat = document.getElementById('etat');
+  var zoneRecit = document.getElementById('recit');
+  var zoneDes = document.getElementById('des');
+  var zoneChoix = document.getElementById('choix');
+  var zoneJournal = document.getElementById('journal');
+  var zoneBilan = document.getElementById('bilan');
+
+  var partie = null;
+
+  // Écrit le récit et place le focus dessus, pour qu'un lecteur d'écran le lise.
+  function raconter(phrases) {
+    zoneRecit.textContent = '';
+    phrases.forEach(function (texte) {
+      if (!texte) { return; }
+      var p = document.createElement('p');
+      p.textContent = texte;
+      zoneRecit.appendChild(p);
+      partie.trace.push(texte);
+    });
+    afficherEtat();
+    zoneRecit.focus();
+  }
+
+  function afficherEtat() {
+    if (!partie) { zoneEtat.textContent = ''; return; }
+    zoneEtat.textContent = 'Toi : ' + pv(partie.vie) + ' sur ' + HEROS.vie +
+      ', ' + pluriel(partie.chances, 'dé de chance', 'dés de chance') +
+      '. ' + partie.monstre.Nom + ' : ' + pv(Math.max(0, partie.vieMonstre)) + '.';
+  }
+
+  // choix = [[libellé, fonction], …]
+  function proposer(choix) {
+    zoneChoix.textContent = '';
+    choix.forEach(function (c, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = (i + 1) + '. ' + c[0];
+      b.addEventListener('click', function () { c[1](); });
+      zoneChoix.appendChild(b);
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (ecranCombat.hidden) { return; }
+    var n = parseInt(e.key, 10);
+    if (n >= 1 && n <= 9) {
+      var boutons = zoneChoix.querySelectorAll('button');
+      if (boutons[n - 1]) { e.preventDefault(); boutons[n - 1].click(); }
+    }
+  });
+
+  // =====================================================================
+  // DÉROULEMENT COMMUN
+  // =====================================================================
+  function commencer() {
+    var systeme = lireRadio('systeme');
+    var cle = lireRadio('monstre');
+    var monstre = MONSTRES[cle];
+    partie = {
+      systeme: systeme,
+      cleMonstre: cle,
+      monstre: monstre,
+      regles: monstre[systeme],
+      seuilChance: parseInt(lireRadio('seuil-chance'), 10),
+      vie: HEROS.vie,
+      chances: HEROS.desDeChance,
+      vieMonstre: monstre[systeme].vie,
+      tours: 0,
+      decisions: { bonnesLectures: 0, lectures: 0, relances: 0, encaisse: 0, arrets: 0, trebuche: 0, chancesUtilisees: 0, chancesReussies: 0, fuites: 0 },
+      trace: []
+    };
+    ecranAccueil.hidden = true;
+    ecranCombat.hidden = false;
+    zoneDes.hidden = true;
+    var noms = { A: 'A, relance risquée', B: 'B, garder et relancer', C: 'C, lire le monstre' };
+    document.getElementById('titre-combat').textContent = 'Combat ' + noms[systeme] + ', contre ' + monstre.nom;
+    raconter(reglesDuSysteme().concat([monstre.entree]));
+    proposer([['Commencer le combat', tourSuivant]]);
+  }
+
+  function reglesDuSysteme() {
+    var r = partie.regles;
+    var chance = 'Si un coup doit te tuer, tu peux lancer un dé de chance : sur ' + partie.seuilChance +
+      ' ou plus, tu l\'évites. Si tu échoues, tu peux en lancer un autre, tant qu\'il t\'en reste.';
+    var fuite = 'Fuir : tu lances un dé, il faut ' + r.fuite + ' ou plus. Si tu échoues, ' + partie.monstre.nom + ' frappe sans riposte.';
+    if (partie.systeme === 'C') {
+      return [
+        'Règles. Avant chaque assaut, ' + partie.monstre.nom + ' fait un geste qui annonce son intention : bondir sur toi, se protéger, ou tourner autour de toi pour chercher une ouverture. À toi de deviner laquelle.',
+        'Tu choisis alors ta posture. Esquiver contre un bond, attaquer quand il se protège, parer quand il cherche une ouverture : la bonne posture ajoute 3 à ton total.',
+        'Puis chacun lance deux dés et ajoute son habileté : 7 pour toi, ' + r.habilete + ' pour ' + partie.monstre.nom + '. Le plus haut total touche.',
+        'Tes coups retirent 2 points de vie, 3 si tu as choisi d\'attaquer. Ses coups retirent ' + pv(r.degats) + ', le double s\'il bondit et que tu n\'esquives pas, 1 de moins si tu pares. Quand il se protège, il ne frappe pas.',
+        chance, fuite
+      ];
+    }
+    if (partie.systeme === 'A') {
+      return [
+        'Règles. Chacun lance deux dés et ajoute son habileté : 7 pour toi, ' + r.habilete + ' pour ' + partie.monstre.nom + '. Le plus haut total touche et retire ' + pv(r.degats) + ' (2 pour toi).',
+        'Si tu perds un assaut, tu peux relancer ton dé le plus faible, une seule fois. Le jeu te dit le chiffre qu\'il te faudrait. Si tu perds quand même, ' + partie.monstre.nom + ' frappe deux fois.',
+        chance, fuite
+      ];
+    }
+    return [
+      'Règles. À ton tour, tu lances 6 dés. Après chaque lancer, tu choisis les dés à relancer, jusqu\'à 3 lancers. Tu peux t\'arrêter quand tu veux.',
+      'Un 6 est un coup : ' + partie.monstre.nom + ' perd 1 point de vie. Un 5 est une parade : elle bloque 1 point de dégâts. Un 1 est un crâne : il reste sur la table. Les 2, 3 et 4 ne donnent rien.',
+      'Si une relance amène ton troisième crâne, tu trébuches : tes coups et tes parades de ce tour sont perdus. Des crânes au premier lancer ne te font jamais trébucher.',
+      'À la fin de ton tour, ' + partie.monstre.nom + ' frappe : ' + pv(r.force) + ', moins tes parades.',
+      chance, fuite
+    ];
+  }
+
+  function tourSuivant() {
+    partie.tours += 1;
+    if (partie.systeme === 'A') { tourA(); } else if (partie.systeme === 'B') { tourB(); } else { tourC(); }
+  }
+
+  function choixDuTour() {
+    return [['Attaquer', function () { partie.systeme === 'A' ? assautA() : lancerB(true); }], ['Fuir', fuir]];
+  }
+
+  // Le monstre frappe. Si le coup est mortel, on propose les dés de chance.
+  function subir(degats, phrases, ensuite) {
+    if (partie.vie - degats > 0) {
+      partie.vie -= degats;
+      raconter(phrases.concat(['Tu perds ' + pv(degats) + '.']));
+      proposer([['Continuer', ensuite]]);
+      return;
+    }
+    proposerChance(degats, phrases, ensuite);
+  }
+
+  function proposerChance(degats, phrases, ensuite) {
+    var texte = phrases.concat(['Ce coup de ' + degats + ' serait le dernier.']);
+    if (partie.chances === 0) {
+      texte.push('Il ne te reste aucun dé de chance.');
+      raconter(texte);
+      proposer([['Continuer', function () { mourir(); }]]);
+      return;
+    }
+    texte.push('Il te reste ' + pluriel(partie.chances, 'dé de chance', 'dés de chance') + '. Il faut ' + partie.seuilChance + ' ou plus.');
+    raconter(texte);
+    proposer([
+      ['Lancer un dé de chance', function () {
+        var resultat = de();
+        partie.chances -= 1;
+        partie.decisions.chancesUtilisees += 1;
+        var lu = 'Dé de chance : ' + resultat + '.';
+        if (resultat >= partie.seuilChance) {
+          partie.decisions.chancesReussies += 1;
+          raconter([lu, 'La chance te sourit : le coup te frôle sans te toucher.']);
+          proposer([['Continuer', ensuite]]);
+        } else {
+          proposerChance(degats, [lu, 'Raté.'], ensuite);
+        }
+      }],
+      ['Renoncer', function () { mourir(); }]
+    ]);
+  }
+
+  function fuir() {
+    var r = partie.regles;
+    var resultat = de();
+    partie.decisions.fuites += 1;
+    var lu = 'Tu tentes de fuir : ' + resultat + '. Il fallait ' + r.fuite + ' ou plus.';
+    if (resultat >= r.fuite) {
+      raconter([lu, 'Tu recules d\'un bond et claques la porte derrière toi.']);
+      terminer('fuite');
+      return;
+    }
+    var degats = partie.systeme === 'B' ? r.force : r.degats;
+    subir(degats, [lu, partie.monstre.Nom + ' te barre le passage. ' + au(partie.monstre.frappe)], tourSuivant);
+  }
+
+  function vaincre(phrases) {
+    raconter(phrases.concat([partie.monstre.mort, 'Victoire !']));
+    terminer('victoire');
+  }
+
+  function mourir() {
+    partie.vie = 0;
+    raconter(['Le noir se referme sur toi. Tu es mort.']);
+    terminer('mort');
+  }
+
+  // =====================================================================
+  // SYSTÈME A : relance risquée
+  // =====================================================================
+  function tourA() {
+    raconter(['Assaut ' + partie.tours + '.']);
+    proposer(choixDuTour());
+  }
+
+  function assautA() {
+    var r = partie.regles;
+    var dh = [de(), de()];
+    var dm = [de(), de()];
+    var th = dh[0] + dh[1] + HEROS.habilete;
+    var tm = dm[0] + dm[1] + r.habilete;
+    var phrases = [
+      'Tu lances ' + dh[0] + ' et ' + dh[1] + '. Avec ton habileté : ' + th + '.',
+      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Avec son habileté : ' + tm + '.'
+    ];
+    if (th > tm) { toucherA(phrases); return; }
+    if (th === tm) {
+      raconter(phrases.concat(['Égalité. Les coups se croisent sans toucher.']));
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    // Assaut perdu : relance possible du dé le plus faible.
+    var i = dh[0] <= dh[1] ? 0 : 1;
+    var besoin = dh[i] + (tm - th) + 1;
+    var annonce = besoin <= 6
+      ? 'Pour gagner, il te faudrait ' + besoin + ' ou plus en relançant ton ' + dh[i] + '.'
+      : 'Même un 6 ne te ferait pas gagner en relançant ton ' + dh[i] + '.';
+    raconter(phrases.concat(['Tu perds l\'assaut.', annonce]));
+    proposer([
+      ['Relancer ton ' + dh[i], function () {
+        partie.decisions.relances += 1;
+        var nouveau = de();
+        dh[i] = nouveau;
+        var t2 = dh[0] + dh[1] + HEROS.habilete;
+        var lu = 'Tu relances : ' + nouveau + '. Avec ton habileté : ' + t2 + ' contre ' + tm + '.';
+        if (t2 > tm) { toucherA([lu]); return; }
+        if (t2 === tm) {
+          raconter([lu, 'Égalité. Tu échappes au coup de justesse.']);
+          proposer([['Continuer', tourSuivant]]);
+          return;
+        }
+        subir(r.degats * 2, [lu, 'Tu perds quand même. ' + partie.monstre.Nom + ' frappe deux fois. ' + au(partie.monstre.frappe)], tourSuivant);
+      }],
+      ['Encaisser', function () {
+        partie.decisions.encaisse += 1;
+        subir(r.degats, [au(partie.monstre.frappe)], tourSuivant);
+      }]
+    ]);
+  }
+
+  function toucherA(phrases) {
+    partie.vieMonstre -= 2;
+    var texte = phrases.concat([au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd 2 points de vie.']);
+    if (partie.vieMonstre <= 0) { vaincre(texte); return; }
+    raconter(texte);
+    proposer([['Continuer', tourSuivant]]);
+  }
+
+  // =====================================================================
+  // SYSTÈME B : garder et relancer
+  // =====================================================================
+  var desB = [];          // [{ valeur, relancer }]
+  var lancerB_n = 0;
+
+  function sens(v) {
+    if (v === 6) { return 'coup'; }
+    if (v === 5) { return 'parade'; }
+    if (v === 1) { return 'crâne'; }
+    return 'rien';
+  }
+
+  function compter() {
+    var c = { coups: 0, parades: 0, cranes: 0, rien: 0 };
+    desB.forEach(function (d) {
+      if (d.valeur === 6) { c.coups += 1; }
+      else if (d.valeur === 5) { c.parades += 1; }
+      else if (d.valeur === 1) { c.cranes += 1; }
+      else { c.rien += 1; }
+    });
+    return c;
+  }
+
+  function resume(c) {
+    var morceaux = [];
+    if (c.coups) { morceaux.push(pluriel(c.coups, 'coup', 'coups')); }
+    if (c.parades) { morceaux.push(pluriel(c.parades, 'parade', 'parades')); }
+    if (c.cranes) { morceaux.push(pluriel(c.cranes, 'crâne', 'crânes')); }
+    if (c.rien) { morceaux.push(c.rien + ' sans effet'); }
+    return 'Tu as ' + liste(morceaux) + '.';
+  }
+
+  function tourB() {
+    raconter(['Tour ' + partie.tours + '.']);
+    zoneDes.hidden = true;
+    proposer(choixDuTour());
+  }
+
+  // premier : vrai pour le premier lancer du tour (tous les dés).
+  function lancerB(premier) {
+    var cranesAvant = 0;
+    if (premier) {
+      lancerB_n = 1;
+      desB = [];
+      for (var i = 0; i < NB_DES_B; i += 1) { desB.push({ valeur: de(), relancer: false }); }
+    } else {
+      lancerB_n += 1;
+      cranesAvant = compter().cranes;
+      var relances = 0;
+      desB.forEach(function (d) {
+        if (d.relancer) { d.valeur = de(); d.relancer = false; relances += 1; }
+      });
+      if (!relances) { lancerB_n -= 1; return; }
+    }
+    var c = compter();
+    var valeurs = desB.map(function (d) { return d.valeur; }).sort(function (a, b) { return b - a; });
+    var phrases = [(lancerB_n === 1 ? 'Premier' : lancerB_n === 2 ? 'Deuxième' : 'Troisième') + ' lancer : ' + liste(valeurs.map(String)) + '.', resume(c)];
+
+    if (!premier && c.cranes >= SEUIL_TREBUCHE && cranesAvant < SEUIL_TREBUCHE) {
+      partie.decisions.trebuche += 1;
+      zoneDes.hidden = true;
+      finTourB(true, phrases.concat(['Troisième crâne : tu trébuches ! Tes coups et tes parades de ce tour sont perdus.']));
+      return;
+    }
+    if (lancerB_n >= LANCERS_MAX) {
+      zoneDes.hidden = true;
+      finTourB(false, phrases.concat(['C\'était ton dernier lancer.']));
+      return;
+    }
+    // Par défaut, on propose de relancer les dés sans effet.
+    desB.forEach(function (d) { d.relancer = (d.valeur >= 2 && d.valeur <= 4); });
+    var reste = LANCERS_MAX - lancerB_n;
+    phrases.push('Il te reste ' + pluriel(reste, 'lancer', 'lancers') + '.' +
+      (c.cranes === SEUIL_TREBUCHE - 1 ? ' Attention : un crâne de plus et tu trébuches.' : ''));
+    raconter(phrases);
+    afficherDes();
+    proposerRelance();
+  }
+
+  function afficherDes() {
+    zoneDes.textContent = '';
+    zoneDes.hidden = false;
+    desB.forEach(function (d, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      var face = document.createElement('span');
+      face.className = 'face';
+      face.textContent = d.valeur;
+      var etiquette = document.createElement('span');
+      etiquette.className = 'sens';
+      b.appendChild(face);
+      b.appendChild(etiquette);
+      function majEtiquette() {
+        var etat = d.valeur === 1 ? 'bloqué' : (d.relancer ? 'à relancer' : 'gardé');
+        etiquette.textContent = sens(d.valeur) + ', ' + etat;
+        b.setAttribute('aria-label', 'Dé ' + (i + 1) + ' : ' + d.valeur + ', ' + sens(d.valeur) + ', ' + etat);
+        b.setAttribute('aria-pressed', d.relancer ? 'true' : 'false');
+      }
+      if (d.valeur === 1) {
+        b.disabled = true;
+      } else {
+        b.addEventListener('click', function () {
+          d.relancer = !d.relancer;
+          majEtiquette();
+          proposerRelance();
+        });
+      }
+      majEtiquette();
+      zoneDes.appendChild(b);
+    });
+  }
+
+  function proposerRelance() {
+    var nb = desB.filter(function (d) { return d.relancer; }).length;
+    var choix = [];
+    if (nb > 0) {
+      choix.push(['Relancer ' + pluriel(nb, 'dé', 'dés') + ' (les dés marqués « à relancer »)', function () {
+        partie.decisions.relances += 1;
+        lancerB(false);
+      }]);
+    }
+    choix.push(['M\'arrêter et frapper', function () {
+      partie.decisions.arrets += 1;
+      zoneDes.hidden = true;
+      finTourB(false, ['Tu t\'arrêtes. ' + resume(compter())]);
+    }]);
+    proposer(choix);
+  }
+
+  function finTourB(trebuche, phrases) {
+    var r = partie.regles;
+    var c = compter();
+    var coups = trebuche ? 0 : c.coups;
+    var parades = trebuche ? 0 : c.parades;
+    var texte = phrases.slice();
+    if (coups > 0) {
+      partie.vieMonstre -= coups;
+      texte.push(au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd ' + pv(coups) + '.');
+      if (partie.vieMonstre <= 0) { vaincre(texte); return; }
+    } else if (!trebuche) {
+      texte.push('Aucun de tes coups ne porte.');
+    }
+    var degats = Math.max(0, r.force - parades);
+    if (degats === 0) {
+      raconter(texte.concat([partie.monstre.Nom + ' frappe, mais tes parades bloquent tout.']));
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    var frappe = partie.monstre.Nom + ' frappe. ' + au(partie.monstre.frappe) +
+      (parades > 0 ? ' Tes parades bloquent ' + pluriel(Math.min(parades, r.force), 'point', 'points') + '.' : '');
+    subir(degats, texte.concat([frappe]), tourSuivant);
+  }
+
+  // =====================================================================
+  // SYSTÈME C : lire le monstre
+  // =====================================================================
+  var POSTURE_JUSTE = { bondir: 'esquiver', proteger: 'attaquer', tourner: 'parer' };
+  var INTENTIONS = { bondir: 'Il voulait bondir.', proteger: 'Il voulait se protéger.', tourner: 'Il cherchait une ouverture.' };
+
+  function tourC() {
+    var intentions = ['bondir', 'proteger', 'tourner'];
+    var intention = intentions[Math.floor(Math.random() * 3)];
+    var signe = au(partie.monstre.signes[intention]);
+    raconter(['Assaut ' + partie.tours + '.', signe]);
+    proposer([
+      ['Attaquer', function () { assautC(intention, 'attaquer'); }],
+      ['Esquiver', function () { assautC(intention, 'esquiver'); }],
+      ['Parer', function () { assautC(intention, 'parer'); }],
+      ['Fuir', fuir]
+    ]);
+  }
+
+  function assautC(intention, posture) {
+    var r = partie.regles;
+    var juste = POSTURE_JUSTE[intention] === posture;
+    partie.decisions.lectures += 1;
+    if (juste) { partie.decisions.bonnesLectures += 1; }
+    var dh = [de(), de()];
+    var dm = [de(), de()];
+    var bonus = juste ? 3 : 0;
+    var th = dh[0] + dh[1] + HEROS.habilete + bonus;
+    var tm = dm[0] + dm[1] + r.habilete;
+    var phrases = [
+      INTENTIONS[intention] + (juste ? ' Bonne lecture : plus 3.' : ' Mauvaise lecture.'),
+      'Tu lances ' + dh[0] + ' et ' + dh[1] + '. Total : ' + th + '.',
+      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Total : ' + tm + '.'
+    ];
+    if (th > tm) {
+      var inflige = 2 + (posture === 'attaquer' ? 1 : 0);
+      partie.vieMonstre -= inflige;
+      phrases.push(au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd ' + pv(inflige) + '.');
+      if (partie.vieMonstre <= 0) { vaincre(phrases); return; }
+      raconter(phrases);
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    if (th === tm) {
+      raconter(phrases.concat(['Égalité. Personne n\'est touché.']));
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    if (intention === 'proteger') {
+      raconter(phrases.concat(['Tu ne passes pas sa garde, mais il ne riposte pas.']));
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    var degats = r.degats;
+    var precision = '';
+    if (intention === 'bondir' && posture !== 'esquiver') { degats *= 2; precision = ' Son bond double les dégâts.'; }
+    if (posture === 'parer') { degats -= 1; precision += ' Ta parade en retire 1.'; }
+    if (degats <= 0) {
+      raconter(phrases.concat(['Ta parade bloque tout le coup.']));
+      proposer([['Continuer', tourSuivant]]);
+      return;
+    }
+    subir(degats, phrases.concat([au(partie.monstre.frappe) + precision]), tourSuivant);
+  }
+
+  // =====================================================================
+  // FIN DE COMBAT, BILAN ET JOURNAL
+  // =====================================================================
+  var bilan = { A: { victoire: 0, mort: 0, fuite: 0 }, B: { victoire: 0, mort: 0, fuite: 0 }, C: { victoire: 0, mort: 0, fuite: 0 } };
+
+  function terminer(issue) {
+    var d = partie.decisions;
+    bilan[partie.systeme][issue] += 1;
+    var heure = new Date().toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
+    var ligne = heure + ' · Système ' + partie.systeme + ' · ' + partie.monstre.nom +
+      ' · chance ' + partie.seuilChance + '+ · ' + issue +
+      ' en ' + partie.tours + ' tour(s) · vie ' + Math.max(0, partie.vie) + '/' + HEROS.vie +
+      (partie.systeme === 'A' ? ' · relances ' + d.relances + ' · encaissé ' + d.encaisse :
+        partie.systeme === 'B' ? ' · relances ' + d.relances + ' · arrêts ' + d.arrets + ' · trébuché ' + d.trebuche :
+        ' · bonnes lectures ' + d.bonnesLectures + '/' + d.lectures) +
+      ' · dés de chance ' + d.chancesReussies + '/' + d.chancesUtilisees + ' réussis · fuites tentées ' + d.fuites;
+    zoneJournal.value = (zoneJournal.value ? zoneJournal.value + '\n' : '') + ligne;
+    sauverJournal();
+    afficherBilan();
+    proposer([
+      ['Rejouer le même combat', function () { commencer(); }],
+      ['Changer de système ou d\'adversaire', retourAccueil]
+    ]);
+  }
+
+  function retourAccueil() {
+    partie = null;
+    ecranCombat.hidden = true;
+    ecranAccueil.hidden = false;
+    document.getElementById('commencer').focus();
+  }
+
+  function afficherBilan() {
+    var morceaux = [];
+    ['A', 'B', 'C'].forEach(function (s) {
+      var b = bilan[s];
+      var total = b.victoire + b.mort + b.fuite;
+      if (total) {
+        morceaux.push('Système ' + s + ' : ' + pluriel(total, 'combat', 'combats') + ', ' +
+          pluriel(b.victoire, 'victoire', 'victoires') + ', ' + pluriel(b.mort, 'mort', 'morts') + ', ' +
+          pluriel(b.fuite, 'fuite', 'fuites') + '.');
+      }
+    });
+    zoneBilan.textContent = morceaux.length ? morceaux.join(' ') : 'Aucun combat joué pour l\'instant.';
+  }
+
+  function sauverJournal() {
+    try { localStorage.setItem('journal-combats', zoneJournal.value); } catch (e) {}
+  }
+
+  try { zoneJournal.value = localStorage.getItem('journal-combats') || ''; } catch (e) {}
+
+  document.getElementById('copier').addEventListener('click', function () {
+    var info = document.getElementById('info-copie');
+    var texte = zoneJournal.value;
+    if (!texte) { info.textContent = 'Le journal est vide.'; return; }
+    function repli() {
+      zoneJournal.focus();
+      zoneJournal.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      info.textContent = ok ? 'Journal copié.' : 'Le journal est sélectionné : copie-le avec le menu de ton appareil.';
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texte).then(function () { info.textContent = 'Journal copié.'; }, repli);
+    } else {
+      repli();
+    }
+  });
+
+  document.getElementById('effacer').addEventListener('click', function () {
+    zoneJournal.value = '';
+    sauverJournal();
+    document.getElementById('info-copie').textContent = 'Journal effacé.';
+  });
+
+  document.getElementById('commencer').addEventListener('click', commencer);
+})();
+</script>
+</body>
+</html>
