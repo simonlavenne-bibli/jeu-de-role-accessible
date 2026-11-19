@@ -109,10 +109,43 @@
     <label><input type="radio" name="seuil-chance" value="5"> 5 ou plus</label>
   </fieldset>
 
+  <label for="testeur" style="font-weight:bold;">Ton prénom ou pseudo (facultatif)</label>
+  <input id="testeur" type="text" maxlength="40" autocomplete="nickname" style="font:inherit;width:100%;padding:0.5rem;margin:0.2rem 0 0.8rem;background:var(--fond);color:var(--encre);border:3px solid var(--encre);">
+
+  <p class="discret" id="mention-collecte">Les résultats de tes combats et ton avis sont envoyés à l'équipe de La Lumière pour comparer les systèmes. Rien d'autre n'est collecté, à part le prénom ou pseudo si tu l'indiques.</p>
+
   <button id="commencer" type="button">Lire les règles et commencer</button>
 
   <h2>Résultats de cette séance</h2>
   <p id="bilan" class="discret">Aucun combat joué pour l'instant.</p>
+
+  <h2 id="titre-avis">Ton avis</h2>
+  <p class="discret">Après avoir essayé les systèmes, dis-nous lesquels tu as aimés. Tu peux renvoyer un avis plus tard si tu changes d'idée.</p>
+  <fieldset>
+    <legend>Quels systèmes as-tu aimés ? (plusieurs choix possibles)</legend>
+    <label><input type="checkbox" name="apprecie" value="A"> A : relance risquée</label>
+    <label><input type="checkbox" name="apprecie" value="B"> B : garder et relancer</label>
+    <label><input type="checkbox" name="apprecie" value="C"> C : lire ou écouter le monstre</label>
+    <label><input type="checkbox" name="apprecie" value="D"> D : seuil et karma</label>
+    <label><input type="checkbox" name="apprecie" value="E"> E : deux actions par tour</label>
+    <label><input type="checkbox" name="apprecie" value="F"> F : réserve de dés et états de santé</label>
+    <label><input type="checkbox" name="apprecie" value="G"> G : 2 dés contre 9</label>
+  </fieldset>
+  <fieldset>
+    <legend>Si tu ne devais en garder qu'un ?</legend>
+    <label><input type="radio" name="prefere" value="A"> A : relance risquée</label>
+    <label><input type="radio" name="prefere" value="B"> B : garder et relancer</label>
+    <label><input type="radio" name="prefere" value="C"> C : lire ou écouter le monstre</label>
+    <label><input type="radio" name="prefere" value="D"> D : seuil et karma</label>
+    <label><input type="radio" name="prefere" value="E"> E : deux actions par tour</label>
+    <label><input type="radio" name="prefere" value="F"> F : réserve de dés et états de santé</label>
+    <label><input type="radio" name="prefere" value="G"> G : 2 dés contre 9</label>
+    <label><input type="radio" name="prefere" value="aucun" checked> Je ne sais pas</label>
+  </fieldset>
+  <label for="commentaire" style="font-weight:bold;">Un commentaire ? (facultatif)</label>
+  <textarea id="commentaire" maxlength="1000" rows="4" style="font:inherit;width:100%;padding:0.5rem;margin:0.2rem 0 0.8rem;background:var(--fond);color:var(--encre);border:3px solid var(--encre);"></textarea>
+  <button id="envoyer-avis" type="button">Envoyer mon avis</button>
+  <p id="info-avis" class="discret" role="status"></p>
 </section>
 
 <!-- ============================ COMBAT ============================ -->
@@ -194,6 +227,10 @@
       mort: 'Le démon s\'effondre et se dissout en cendres.'
     }
   };
+
+  // Adresse de l'application Google Apps Script qui reçoit les résultats.
+  // Vide : rien n'est envoyé, la page fonctionne quand même.
+  var ADRESSE_COLLECTE = '';
 
   var SEUIL_TREBUCHE = 3;      // nombre de crânes qui font trébucher (système B)
   var LANCERS_MAX = 3;         // lancers par tour (système B)
@@ -1266,6 +1303,77 @@
   };
 
   // =====================================================================
+  // ENVOI DES RÉSULTATS
+  // =====================================================================
+  var champTesteur = document.getElementById('testeur');
+  var seance = '';
+  try {
+    seance = localStorage.getItem('seance-essai') || '';
+    champTesteur.value = localStorage.getItem('testeur-essai') || '';
+  } catch (e) {}
+  if (!seance) {
+    seance = 'S-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    try { localStorage.setItem('seance-essai', seance); } catch (e) {}
+  }
+  champTesteur.addEventListener('change', function () {
+    try { localStorage.setItem('testeur-essai', champTesteur.value.trim()); } catch (e) {}
+  });
+
+  if (!ADRESSE_COLLECTE) {
+    document.getElementById('mention-collecte').textContent =
+      'Version de démonstration : les résultats restent sur cet appareil, rien n\'est envoyé.';
+  }
+
+  // Envoi sans attendre de réponse : une page sur un autre site ne peut pas la lire.
+  function transmettre(donnees) {
+    if (!ADRESSE_COLLECTE) { return Promise.resolve(false); }
+    donnees.testeur = champTesteur.value.trim();
+    donnees.seance = seance;
+    return fetch(ADRESSE_COLLECTE, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(donnees)
+    }).then(function () { return true; }, function () { return false; });
+  }
+
+  function combatsJoues() {
+    var morceaux = [];
+    Object.keys(bilan).forEach(function (s) {
+      var b = bilan[s];
+      var total = b.victoire + b.mort + b.fuite;
+      if (total) { morceaux.push(s + ' : ' + total); }
+    });
+    return morceaux.join(', ');
+  }
+
+  document.getElementById('envoyer-avis').addEventListener('click', function () {
+    var info = document.getElementById('info-avis');
+    var apprecies = Array.prototype.slice.call(document.querySelectorAll('input[name="apprecie"]:checked'))
+      .map(function (c) { return c.value; });
+    var prefere = lireRadio('prefere');
+    var commentaire = document.getElementById('commentaire').value.trim();
+    if (!apprecies.length && prefere === 'aucun' && !commentaire) {
+      info.textContent = 'Coche au moins un système ou écris un commentaire avant d\'envoyer.';
+      return;
+    }
+    if (!ADRESSE_COLLECTE) {
+      info.textContent = 'L\'envoi n\'est pas encore activé sur cette version de la page.';
+      return;
+    }
+    info.textContent = 'Envoi en cours…';
+    transmettre({
+      type: 'avis',
+      apprecies: apprecies.join(', '),
+      prefere: prefere === 'aucun' ? '' : prefere,
+      commentaire: commentaire,
+      combats: combatsJoues()
+    }).then(function (ok) {
+      info.textContent = ok ? 'Merci, ton avis est envoyé.' : 'L\'envoi a échoué. Vérifie ta connexion et réessaie.';
+    });
+  });
+
+  // =====================================================================
   // FIN DE COMBAT, BILAN ET JOURNAL
   // =====================================================================
   var bilan = { A: { victoire: 0, mort: 0, fuite: 0 }, B: { victoire: 0, mort: 0, fuite: 0 }, C: { victoire: 0, mort: 0, fuite: 0 },
@@ -1285,6 +1393,20 @@
         (partie.indice === 'sonore' ? ' · réécoutes ' + d.reecoutes : '')) +
       ' · dés de chance ' + d.chancesReussies + '/' + d.chancesUtilisees + ' réussis · fuites tentées ' + d.fuites;
     zoneJournal.value = (zoneJournal.value ? zoneJournal.value + '\n' : '') + ligne;
+    transmettre({
+      type: 'combat',
+      systeme: partie.systeme,
+      adversaire: partie.monstre.nom.replace(/^le /, ''),
+      seuilChance: partie.seuilChance,
+      indice: partie.systeme === 'C' ? partie.indice : '',
+      issue: issue,
+      tours: partie.tours,
+      vie: partie.systeme === 'F' ? '' : Math.max(0, partie.vie),
+      chancesLancees: d.chancesUtilisees,
+      chancesReussies: d.chancesReussies,
+      fuites: d.fuites,
+      detail: ligne
+    });
     sauverJournal();
     afficherBilan();
     proposer([

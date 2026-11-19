@@ -13,12 +13,11 @@ var ONGLET_AVIS = 'Avis';
 
 // Ordre des colonnes après « Reçu le », identique aux en-têtes des onglets.
 var COLONNES_COMBATS = [
-  'testeur', 'seance', 'systeme', 'adversaire', 'seuilChance', 'issue', 'tours', 'vie',
-  'relances', 'encaisse', 'arrets', 'trebuche', 'bonnesLectures', 'lectures',
-  'chancesLancees', 'chancesReussies', 'fuites'
+  'testeur', 'seance', 'systeme', 'adversaire', 'seuilChance', 'indice', 'issue', 'tours', 'vie',
+  'chancesLancees', 'chancesReussies', 'fuites', 'detail'
 ];
 var COLONNES_AVIS = [
-  'testeur', 'seance', 'apprecies', 'prefere', 'commentaire', 'combatsA', 'combatsB', 'combatsC'
+  'testeur', 'seance', 'apprecies', 'prefere', 'commentaire', 'combats'
 ];
 
 function doPost(e) {

@@ -28,6 +28,6 @@ Après une modification du script, utiliser **Déployer > Gérer les déploiemen
 
 ## Ce qui est collecté
 
-Pour chaque combat : le système, l'adversaire, le seuil des dés de chance, l'issue, le nombre de tours, la vie restante et les décisions prises (relances, arrêts, lectures, dés de chance, fuites). Pour chaque avis : les systèmes appréciés, le système préféré et un commentaire libre.
+Pour chaque combat : le système, l'adversaire, le seuil des dés de chance, l'indice choisi pour le système C, l'issue, le nombre de tours, la vie restante, les dés de chance et les fuites, ainsi que la ligne complète du journal, qui détaille les décisions propres à chaque système. Pour chaque avis : les systèmes appréciés, le système préféré, un commentaire libre et le nombre de combats joués par système.
 
 Chaque appareil reçoit un identifiant de séance au hasard (par exemple `S-ED9KTK`) pour regrouper ses combats. Aucune autre donnée n'est collectée, à part le prénom ou pseudo si le testeur le saisit.
