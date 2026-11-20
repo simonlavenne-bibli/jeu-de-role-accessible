@@ -27,6 +27,7 @@ Jeu de rôle « porte, monstre, trésor » pour un public aveugle ou malvoyant, 
 | Script de collecte des résultats (Google Apps Script) | `outils/collecte-resultats.gs`, installation dans `docs/collecte-resultats.md` |
 | Premier prototype avec images, sons et voix | branche `illustrations-essai`, `prototype/premier-combat.html` |
 | Illustrations au format du jeu, scripts d'images et de voix | branche `illustrations-essai` : `assets/images/`, `outils/` |
+| Les deux styles d'illustration (pixel art décidé, encre en essai) | `docs/styles-illustration.md`, vignettes de l'essai dans `assets/images/essai-encre/` |
 | Résultats des testeurs, illustrations, liens | Dossier Google Drive « Jeu de rôle accessible » de Simon |
 
 ## Contraintes techniques
