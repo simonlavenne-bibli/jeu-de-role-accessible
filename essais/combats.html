@@ -1000,7 +1000,7 @@
         'Règles, inspirées d\'EZD6. Tu lances un seul dé. Pour toucher ' + partie.monstre.nom + ', il faut ' + r.seuil + ' ou plus. Chaque touche lui retire 1 point de vie. Il en a ' + r.vie + ', toi ' + HEROS_D.vie + '.',
         'Un 1 rate toujours. Un 6 touche et tu relances : chaque nouveau dé qui atteint le seuil touche encore, et un nouveau 6 relance encore.',
         'Chaque échec te donne 1 point de karma. Quand tu rates de peu, tu peux dépenser du karma : chaque point ajoute 1 à ton dé.',
-        'Ensuite ' + partie.monstre.nom + ' attaque : il te touche sur ' + r.attaque + ' ou plus. S\'il touche, tu lances ton armure : sur ' + HEROS_D.armure + ' ou plus, elle arrête le coup. Sinon tu perds ' + pv(r.degats) + '.'
+        'Ensuite ' + partie.monstre.nom + ' attaque : il te touche sur ' + r.attaque + ' ou plus. S\'il touche, tu utilises ton bouclier : tu lances un dé, et sur ' + HEROS_D.armure + ' ou plus, ton bouclier arrête le coup. Sinon tu perds ' + pv(r.degats) + '.'
       ];
     },
     etat: function () {
@@ -1065,13 +1065,13 @@
         return;
       }
       etape(phrases.concat([partie.monstre.Nom + ' attaque : ' + m + '. Il lui fallait ' + r.attaque + '. Il te touche. ' + au(partie.monstre.frappe),
-        'Ton armure peut arrêter le coup : il faut ' + HEROS_D.armure + ' ou plus.']), 'Lancer ton armure', function () {
+        'Ton bouclier peut arrêter le coup : il faut ' + HEROS_D.armure + ' ou plus.']), 'Utiliser ton bouclier', function () {
         var a = de();
         if (a >= HEROS_D.armure) {
-          continuer(['Ton armure : ' + a + '. Elle arrête le coup.']);
+          continuer(['Ton bouclier : ' + a + '. Il arrête le coup.']);
           return;
         }
-        subir(r.degats, ['Ton armure : ' + a + '. Elle ne suffit pas.']);
+        subir(r.degats, ['Ton bouclier : ' + a + '. Il ne suffit pas.']);
       });
     },
     fuiteRatee: function (phrases) { versMonstre(phrases, MOTEURS.D.riposte); },
