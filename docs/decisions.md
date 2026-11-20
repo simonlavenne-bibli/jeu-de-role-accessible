@@ -4,6 +4,7 @@ Une ligne par décision prise par Simon, la plus récente en haut. Ne pas reveni
 
 | Date | Décision |
 |---|---|
+| 20/11/2026 | Combats en tour par tour : le joueur lance ses dés, puis ses dégâts ; ensuite seulement le monstre lance ses dés, puis ses dégâts, en deux étapes séparées. Bilan des points de vie des deux combattants à la fin de chaque assaut. |
 | 19/11/2026 | Les résultats des combats et les avis des testeurs (systèmes appréciés, système préféré) sont envoyés automatiquement vers une feuille Google. |
 | 17/11/2026 | Les essais de combat doivent être accessibles par un lien ouvert à tous : GitHub Pages. |
 | 17/11/2026 | Tous les dés de chance peuvent être utilisés à la suite ; réussite testée à 4 ou plus (5 ou plus en option). |

@@ -280,13 +280,17 @@
     zoneRecit.focus();
   }
 
-  function afficherEtat() {
-    if (!partie) { zoneEtat.textContent = ''; return; }
+  // Où en sont les combattants (points de vie, ou états de santé en F).
+  function texteEtat() {
     var m = MOTEURS[partie.systeme];
-    if (m && m.etat) { zoneEtat.textContent = m.etat(); return; }
-    zoneEtat.textContent = 'Toi : ' + pv(partie.vie) + ' sur ' + partie.vieMax +
+    if (m && m.etat) { return m.etat(); }
+    return 'Toi : ' + pv(partie.vie) + ' sur ' + partie.vieMax +
       ', ' + pluriel(partie.chances, 'dé de chance', 'dés de chance') +
       '. ' + partie.monstre.Nom + ' : ' + pv(Math.max(0, partie.vieMonstre)) + '.';
+  }
+
+  function afficherEtat() {
+    zoneEtat.textContent = partie ? texteEtat() : '';
   }
 
   // choix = [[libellé, fonction], …]
@@ -406,17 +410,46 @@
     return [['Attaquer', function () { partie.systeme === 'A' ? assautA() : lancerB(true); }], ['Fuir', fuir]];
   }
 
-  // Le monstre frappe. Si le coup est mortel, on propose les dés de chance.
-  function subir(degats, phrases, ensuite) {
-    if (partie.vie - degats > 0) {
-      partie.vie -= degats;
-      raconter(phrases.concat(['Tu perds ' + pv(degats) + '.']));
-      proposer([['Continuer', ensuite]]);
-      return;
-    }
-    proposerChance(degats, phrases, ensuite);
+  // ---------------------------------------------------------------------
+  // Tour par tour : ton jet, tes dégâts, puis le monstre, puis le bilan.
+  // ---------------------------------------------------------------------
+  // « du squelette », « des squelettes » (bande du système G)…
+  function duMonstre() {
+    return partie.bande ? 'des squelettes' : partie.monstre.nom.replace(/^le /, 'du ');
   }
 
+  // Fin de ton tour : le monstre ne joue que lorsque tu appuies sur le bouton.
+  // suite(phrases) déroule le tour du monstre.
+  function versMonstre(phrases, suite) {
+    raconter(phrases);
+    proposer([['Au tour ' + duMonstre(), function () { suite([]); }]]);
+  }
+
+  // Une étape intermédiaire : le récit, puis un seul bouton pour continuer.
+  function etape(phrases, libelle, suite) {
+    raconter(phrases);
+    proposer([[libelle, suite]]);
+  }
+
+  // Les deux tours sont finis : on dit où en sont les combattants.
+  function finAssaut(phrases) {
+    var mot = (partie.systeme === 'B' || partie.systeme === 'E') ? 'Fin du tour ' : 'Fin de l\'assaut ';
+    raconter(phrases.concat([mot + partie.tours + '. ' + texteEtat()]));
+    proposer([['Continuer', tourSuivant]]);
+  }
+  function continuer(phrases) { finAssaut(phrases); }
+
+  // Le monstre frappe. Si le coup est mortel, on propose les dés de chance.
+  function subir(degats, phrases) {
+    if (partie.vie - degats > 0) {
+      partie.vie -= degats;
+      finAssaut(phrases.concat(['Tu perds ' + pv(degats) + '.']));
+      return;
+    }
+    proposerChance(degats, phrases, finAssaut);
+  }
+
+  // ensuite(phrases) est appelé si la chance te sauve.
   function proposerChance(degats, phrases, ensuite) {
     var texte = phrases.concat(['Ce coup serait le dernier.']);
     if (partie.chances === 0) {
@@ -435,8 +468,7 @@
         var lu = 'Dé de chance : ' + resultat + '.';
         if (resultat >= partie.seuilChance) {
           partie.decisions.chancesReussies += 1;
-          raconter([lu, 'La chance te sourit : le coup te frôle sans te toucher.']);
-          proposer([['Continuer', ensuite]]);
+          ensuite([lu, 'La chance te sourit : le coup te frôle sans te toucher.']);
         } else {
           proposerChance(degats, [lu, 'Raté.'], ensuite);
         }
@@ -459,7 +491,9 @@
     var barre = partie.monstre.Nom + ' te barre le passage.';
     if (MOTEURS[partie.systeme]) { MOTEURS[partie.systeme].fuiteRatee([lu, barre]); return; }
     var degats = partie.systeme === 'B' ? r.force : r.degats;
-    subir(degats, [lu, partie.monstre.Nom + ' te barre le passage. ' + au(partie.monstre.frappe)], tourSuivant);
+    versMonstre([lu, barre], function () {
+      subir(degats, [partie.monstre.Nom + ' frappe sans riposte. ' + au(partie.monstre.frappe)]);
+    });
   }
 
   function vaincre(phrases) {
@@ -482,20 +516,26 @@
     proposer(choixDuTour());
   }
 
+  // Ton jet d'abord, puis celui du monstre, puis on compare.
   function assautA() {
-    var r = partie.regles;
     var dh = [de(), de()];
-    var dm = [de(), de()];
     var th = dh[0] + dh[1] + HEROS.habilete;
+    versMonstre(['Tu lances ' + dh[0] + ' et ' + dh[1] + '. Avec ton habileté : ' + th + '.'], function () {
+      comparerA(dh, th);
+    });
+  }
+
+  function comparerA(dh, th) {
+    var r = partie.regles;
+    var dm = [de(), de()];
     var tm = dm[0] + dm[1] + r.habilete;
     var phrases = [
-      'Tu lances ' + dh[0] + ' et ' + dh[1] + '. Avec ton habileté : ' + th + '.',
-      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Avec son habileté : ' + tm + '.'
+      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Avec son habileté : ' + tm + '.',
+      'Ton total : ' + th + '. Le sien : ' + tm + '.'
     ];
     if (th > tm) { toucherA(phrases); return; }
     if (th === tm) {
-      raconter(phrases.concat(['Égalité. Les coups se croisent sans toucher.']));
-      proposer([['Continuer', tourSuivant]]);
+      finAssaut(phrases.concat(['Égalité. Les coups se croisent sans toucher.']));
       return;
     }
     // Assaut perdu : relance possible du dé le plus faible.
@@ -514,15 +554,14 @@
         var lu = 'Tu relances : ' + nouveau + '. Avec ton habileté : ' + t2 + ' contre ' + tm + '.';
         if (t2 > tm) { toucherA([lu]); return; }
         if (t2 === tm) {
-          raconter([lu, 'Égalité. Tu échappes au coup de justesse.']);
-          proposer([['Continuer', tourSuivant]]);
+          finAssaut([lu, 'Égalité. Tu échappes au coup de justesse.']);
           return;
         }
-        subir(r.degats * 2, [lu, 'Tu perds quand même. ' + partie.monstre.Nom + ' frappe deux fois. ' + au(partie.monstre.frappe)], tourSuivant);
+        subir(r.degats * 2, [lu, 'Tu perds quand même. ' + partie.monstre.Nom + ' frappe deux fois. ' + au(partie.monstre.frappe)]);
       }],
       ['Encaisser', function () {
         partie.decisions.encaisse += 1;
-        subir(r.degats, [au(partie.monstre.frappe)], tourSuivant);
+        subir(r.degats, [au(partie.monstre.frappe)]);
       }]
     ]);
   }
@@ -531,8 +570,7 @@
     partie.vieMonstre -= 2;
     var texte = phrases.concat([au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd 2 points de vie.']);
     if (partie.vieMonstre <= 0) { vaincre(texte); return; }
-    raconter(texte);
-    proposer([['Continuer', tourSuivant]]);
+    finAssaut(texte);
   }
 
   // =====================================================================
@@ -678,15 +716,16 @@
     } else if (!trebuche) {
       texte.push('Aucun de tes coups ne porte.');
     }
-    var degats = Math.max(0, r.force - parades);
-    if (degats === 0) {
-      raconter(texte.concat([partie.monstre.Nom + ' frappe, mais tes parades bloquent tout.']));
-      proposer([['Continuer', tourSuivant]]);
-      return;
-    }
-    var frappe = partie.monstre.Nom + ' frappe. ' + au(partie.monstre.frappe) +
-      (parades > 0 ? ' Tes parades bloquent ' + pluriel(Math.min(parades, r.force), 'point', 'points') + '.' : '');
-    subir(degats, texte.concat([frappe]), tourSuivant);
+    if (parades > 0) { texte.push('Tu gardes ' + pluriel(parades, 'parade', 'parades') + ' pour son attaque.'); }
+    versMonstre(texte, function () {
+      var degats = Math.max(0, r.force - parades);
+      if (degats === 0) {
+        finAssaut([partie.monstre.Nom + ' frappe, mais tes parades bloquent tout.']);
+        return;
+      }
+      subir(degats, [partie.monstre.Nom + ' frappe. ' + au(partie.monstre.frappe) +
+        (parades > 0 ? ' Tes parades bloquent ' + pluriel(Math.min(parades, r.force), 'point', 'points') + '.' : '')]);
+    });
   }
 
   // =====================================================================
@@ -861,32 +900,36 @@
     partie.decisions.lectures += 1;
     if (juste) { partie.decisions.bonnesLectures += 1; }
     var dh = [de(), de()];
-    var dm = [de(), de()];
     var bonus = juste ? 3 : 0;
     var th = dh[0] + dh[1] + HEROS.habilete + bonus;
+    versMonstre([
+      INTENTIONS[intention] + (juste ? ' Bonne lecture : plus 3.' : ' Mauvaise lecture.'),
+      'Tu lances ' + dh[0] + ' et ' + dh[1] + '. Total : ' + th + '.'
+    ], function () { comparerC(intention, posture, th); });
+  }
+
+  function comparerC(intention, posture, th) {
+    var r = partie.regles;
+    var dm = [de(), de()];
     var tm = dm[0] + dm[1] + r.habilete;
     var phrases = [
-      INTENTIONS[intention] + (juste ? ' Bonne lecture : plus 3.' : ' Mauvaise lecture.'),
-      'Tu lances ' + dh[0] + ' et ' + dh[1] + '. Total : ' + th + '.',
-      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Total : ' + tm + '.'
+      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Total : ' + tm + '.',
+      'Ton total : ' + th + '. Le sien : ' + tm + '.'
     ];
     if (th > tm) {
       var inflige = 2 + (posture === 'attaquer' ? 1 : 0);
       partie.vieMonstre -= inflige;
       phrases.push(au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd ' + pv(inflige) + '.');
       if (partie.vieMonstre <= 0) { vaincre(phrases); return; }
-      raconter(phrases);
-      proposer([['Continuer', tourSuivant]]);
+      finAssaut(phrases);
       return;
     }
     if (th === tm) {
-      raconter(phrases.concat(['Égalité. Personne n\'est touché.']));
-      proposer([['Continuer', tourSuivant]]);
+      finAssaut(phrases.concat(['Égalité. Personne n\'est touché.']));
       return;
     }
     if (intention === 'proteger') {
-      raconter(phrases.concat(['Tu ne passes pas sa garde, mais il ne riposte pas.']));
-      proposer([['Continuer', tourSuivant]]);
+      finAssaut(phrases.concat(['Tu ne passes pas sa garde, mais il ne riposte pas.']));
       return;
     }
     var degats = r.degats;
@@ -894,11 +937,10 @@
     if (intention === 'bondir' && posture !== 'esquiver') { degats *= 2; precision = ' Son bond double les dégâts.'; }
     if (posture === 'parer') { degats -= 1; precision += ' Ta parade en retire 1.'; }
     if (degats <= 0) {
-      raconter(phrases.concat(['Ta parade bloque tout le coup.']));
-      proposer([['Continuer', tourSuivant]]);
+      finAssaut(phrases.concat(['Ta parade bloque tout le coup.']));
       return;
     }
-    subir(degats, phrases.concat([au(partie.monstre.frappe) + precision]), tourSuivant);
+    subir(degats, phrases.concat([au(partie.monstre.frappe) + precision]));
   }
 
   // =====================================================================
@@ -942,7 +984,6 @@
 
   function lancer(n) { var t = []; for (var i = 0; i < n; i += 1) { t.push(de()); } return t; }
   function somme(t) { return t.reduce(function (a, b) { return a + b; }, 0); }
-  function continuer(phrases) { raconter(phrases); proposer([['Continuer', tourSuivant]]); }
   function annonce(t) { return liste(t.map(String)); }
 
   var MOTEURS = {};
@@ -976,14 +1017,14 @@
       var phrases = ['Tu lances : ' + d + '. Il faut ' + r.seuil + ' ou plus.'];
       if (d === 1) {
         partie.karma += 1;
-        MOTEURS.D.riposte(phrases.concat(['Un 1 rate toujours. Tu gagnes 1 point de karma.']));
+        versMonstre(phrases.concat(['Un 1 rate toujours. Tu gagnes 1 point de karma.']), MOTEURS.D.riposte);
         return;
       }
       if (d >= r.seuil) { MOTEURS.D.touches(d, phrases); return; }
       var manque = r.seuil - d;
       if (partie.karma < manque) {
         partie.karma += 1;
-        MOTEURS.D.riposte(phrases.concat(['Raté. Tu gagnes 1 point de karma.']));
+        versMonstre(phrases.concat(['Raté. Tu gagnes 1 point de karma.']), MOTEURS.D.riposte);
         return;
       }
       raconter(phrases.concat(['Raté de ' + manque + '. Tu as ' + pluriel(partie.karma, 'point de karma', 'points de karma') + '.']));
@@ -995,7 +1036,7 @@
         }],
         ['Garder ton karma', function () {
           partie.karma += 1;
-          MOTEURS.D.riposte(['Tu gardes ton karma pour plus tard, et tu en gagnes 1 de plus.']);
+          versMonstre(['Tu gardes ton karma pour plus tard, et tu en gagnes 1 de plus.'], MOTEURS.D.riposte);
         }]
       ]);
     },
@@ -1013,8 +1054,9 @@
       partie.vieMonstre -= n;
       phrases.push(au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd ' + pv(n) + '.');
       if (partie.vieMonstre <= 0) { vaincre(phrases); return; }
-      MOTEURS.D.riposte(phrases);
+      versMonstre(phrases, MOTEURS.D.riposte);
     },
+    // Son attaque, puis, s'il touche, ton jet d'armure dans une seconde étape.
     riposte: function (phrases) {
       var r = partie.regles;
       var m = de();
@@ -1022,15 +1064,17 @@
         continuer(phrases.concat([partie.monstre.Nom + ' attaque : ' + m + '. Il lui fallait ' + r.attaque + '. Il te manque.']));
         return;
       }
-      var a = de();
-      phrases = phrases.concat([partie.monstre.Nom + ' attaque : ' + m + '. Il te touche. ' + au(partie.monstre.frappe)]);
-      if (a >= HEROS_D.armure) {
-        continuer(phrases.concat(['Ton armure : ' + a + '. Elle arrête le coup.']));
-        return;
-      }
-      subir(r.degats, phrases.concat(['Ton armure : ' + a + '. Elle ne suffit pas.']), tourSuivant);
+      etape(phrases.concat([partie.monstre.Nom + ' attaque : ' + m + '. Il lui fallait ' + r.attaque + '. Il te touche. ' + au(partie.monstre.frappe),
+        'Ton armure peut arrêter le coup : il faut ' + HEROS_D.armure + ' ou plus.']), 'Lancer ton armure', function () {
+        var a = de();
+        if (a >= HEROS_D.armure) {
+          continuer(['Ton armure : ' + a + '. Elle arrête le coup.']);
+          return;
+        }
+        subir(r.degats, ['Ton armure : ' + a + '. Elle ne suffit pas.']);
+      });
     },
-    fuiteRatee: function (phrases) { MOTEURS.D.riposte(phrases); },
+    fuiteRatee: function (phrases) { versMonstre(phrases, MOTEURS.D.riposte); },
     journal: function (d) { return ' · karma dépensé ' + d.karma + ' · karma restant ' + partie.karma; }
   };
 
@@ -1097,7 +1141,7 @@
     fin: function (phrases) {
       partie.actions -= 1;
       if (partie.actions > 0) { MOTEURS.E.menu(phrases); return; }
-      MOTEURS.E.riposte(phrases);
+      versMonstre(phrases, MOTEURS.E.riposte);
     },
     riposte: function (phrases) {
       var r = partie.regles;
@@ -1108,9 +1152,9 @@
         continuer(phrases.concat([partie.esquive ? 'Tu esquives le coup.' : 'Il te manque.']));
         return;
       }
-      subir(r.degats, phrases.concat([au(partie.monstre.frappe)]), tourSuivant);
+      subir(r.degats, phrases.concat(['Il te touche. ' + au(partie.monstre.frappe)]));
     },
-    fuiteRatee: function (phrases) { partie.esquive = false; MOTEURS.E.riposte(phrases); },
+    fuiteRatee: function (phrases) { partie.esquive = false; versMonstre(phrases, MOTEURS.E.riposte); },
     journal: function (d) { return ' · concentrations ' + d.concentrations + ' · esquives ' + d.esquives; }
   };
 
@@ -1166,41 +1210,46 @@
       var a = reserve(n);
       var phrases = ['Ton attaque, ' + pluriel(n, 'dé', 'dés') + '. ' + a.texte + ' Total : ' + a.total + ', il fallait ' + r.parade + '.'];
       if (a.total < r.parade) {
-        phrases.push(partie.monstre.Nom + ' pare.');
-      } else {
+        versMonstre(phrases.concat([partie.monstre.Nom + ' pare.']), MOTEURS.F.riposte);
+        return;
+      }
+      etape(phrases.concat(['Tu touches.']), 'Lancer tes dégâts', function () {
         var d = reserve(HEROS_F.degatsDes);
         var deg = d.total + HEROS_F.degatsBonus;
         var g = gravite(deg - r.vigueur);
-        phrases.push('Tu touches. Dégâts : ' + d.texte + ' Plus ' + HEROS_F.degatsBonus + ' : ' + deg + ' contre sa vigueur de ' + r.vigueur + '.');
+        var texte = ['Tes dégâts : ' + d.texte + ' Plus ' + HEROS_F.degatsBonus + ' : ' + deg + ' contre sa vigueur de ' + r.vigueur + '.'];
         if (!g) {
-          phrases.push('Le coup ne l\'entame pas.');
+          texte.push('Le coup ne l\'entame pas.');
         } else {
           partie.niveauMonstre = Math.min(4, partie.niveauMonstre + g);
-          phrases.push(au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' est ' + ETATS_F[partie.niveauMonstre] + '.');
-          if (partie.niveauMonstre >= 4) { vaincre(phrases); return; }
+          texte.push(au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' est ' + ETATS_F[partie.niveauMonstre] + '.');
+          if (partie.niveauMonstre >= 4) { vaincre(texte); return; }
         }
-      }
-      MOTEURS.F.riposte(phrases);
+        versMonstre(texte, MOTEURS.F.riposte);
+      });
     },
+    // Son attaque, puis, s'il touche, ses dégâts dans une seconde étape.
     riposte: function (phrases) {
       var r = partie.regles;
       var n = r.des - MALUS_F[partie.niveauMonstre];
       var a = reserve(n);
       phrases = phrases.concat([partie.monstre.Nom + ' attaque, ' + pluriel(n, 'dé', 'dés') + '. ' + a.texte + ' Total : ' + a.total + ' contre ta parade de ' + HEROS_F.parade + '.']);
       if (a.total < HEROS_F.parade) { continuer(phrases.concat(['Tu pares.'])); return; }
-      var d = reserve(r.degatsDes);
-      var deg = d.total + r.degatsBonus;
-      var g = gravite(deg - HEROS_F.vigueur);
-      phrases.push(au(partie.monstre.frappe) + ' Dégâts : ' + deg + ' contre ta vigueur de ' + HEROS_F.vigueur + '.');
-      if (!g) { continuer(phrases.concat(['Tu encaisses sans broncher.'])); return; }
-      if (partie.niveauHeros + g < 4) {
-        partie.niveauHeros += g;
-        continuer(phrases.concat(['Tu es ' + ETATS_F[partie.niveauHeros] + '.']));
-        return;
-      }
-      proposerChance(0, phrases, tourSuivant);
+      etape(phrases.concat(['Il te touche.']), partie.monstre.Nom + ' lance ses dégâts', function () {
+        var d = reserve(r.degatsDes);
+        var deg = d.total + r.degatsBonus;
+        var g = gravite(deg - HEROS_F.vigueur);
+        var texte = ['Ses dégâts : ' + d.texte + ' Plus ' + r.degatsBonus + ' : ' + deg + ' contre ta vigueur de ' + HEROS_F.vigueur + '. ' + au(partie.monstre.frappe)];
+        if (!g) { continuer(texte.concat(['Tu encaisses sans broncher.'])); return; }
+        if (partie.niveauHeros + g < 4) {
+          partie.niveauHeros += g;
+          continuer(texte.concat(['Tu es ' + ETATS_F[partie.niveauHeros] + '.']));
+          return;
+        }
+        proposerChance(0, texte, finAssaut);
+      });
     },
-    fuiteRatee: function (phrases) { MOTEURS.F.riposte(phrases); },
+    fuiteRatee: function (phrases) { versMonstre(phrases, MOTEURS.F.riposte); },
     journal: function () { return ' · état final ' + ETATS_F[partie.niveauHeros] + ' contre ' + ETATS_F[partie.niveauMonstre]; }
   };
 
@@ -1261,44 +1310,56 @@
       var phrases = [(feroce ? 'Assaut féroce. ' : '') + 'Tu lances ' + j.texte + '. Plus ' + HEROS_G.bonus +
         (r.defense ? ', moins ' + r.defense : '') + ' : ' + total + '. Il faut 9.'];
       if (total < 9) {
-        phrases.push('Raté.');
-      } else if (partie.bande) {
+        versMonstre(phrases.concat(['Raté.']), MOTEURS.G.riposte);
+        return;
+      }
+      if (partie.bande) {
+        // Contre la bande, une touche abat un squelette : pas de jet de dégâts.
         var abattus = Math.min(partie.vieMonstre, total >= 12 ? 2 : 1);
         partie.vieMonstre -= abattus;
         phrases.push(abattus === 2 ? 'Coup héroïque : deux squelettes volent en éclats.' : au(partie.monstre.touche) + ' Un squelette s\'effondre.');
-      } else {
+        if (partie.vieMonstre <= 0) { vaincre(phrases); return; }
+        versMonstre(phrases, MOTEURS.G.riposte);
+        return;
+      }
+      etape(phrases.concat(['Tu touches.']), 'Lancer tes dégâts', function () {
         var d = de();
         var deg = Math.max(1, d + 1 - r.armure);
         partie.vieMonstre -= deg;
-        phrases.push(au(partie.monstre.touche) + ' Dégâts : ' + d + ' plus 1' + (r.armure ? ' moins ' + r.armure : '') + '. ' + partie.monstre.Nom + ' perd ' + pv(deg) + '.');
-      }
-      if (partie.vieMonstre <= 0) { vaincre(phrases); return; }
-      MOTEURS.G.riposte(phrases);
+        var texte = ['Tes dégâts : ' + d + ' plus 1' + (r.armure ? ' moins ' + r.armure : '') + '. ' + au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd ' + pv(deg) + '.'];
+        if (partie.vieMonstre <= 0) { vaincre(texte); return; }
+        versMonstre(texte, MOTEURS.G.riposte);
+      });
     },
+    // Ses attaques, puis, s'il touche, ses dégâts dans une seconde étape.
     riposte: function (phrases) {
       var r = partie.regles;
       var avantage = partie.avantageMonstre;
       partie.avantageMonstre = false;
       var nb = partie.bande ? partie.vieMonstre : 1;
-      var degats = 0;
+      var touches = [];
       for (var i = 0; i < nb; i += 1) {
         var j = jetG(avantage);
         var total = j.somme + r.attaque - HEROS_G.defense;
         var qui = partie.bande ? 'Squelette ' + (i + 1) : partie.monstre.Nom;
         var t = qui + (avantage ? ', féroce' : '') + ' : ' + j.texte + ', total ' + total + '.';
-        if (total >= 9) {
-          var deg = Math.max(1, de() + r.degats - HEROS_G.armure);
-          degats += deg;
-          t += ' Il te touche : ' + deg + '.';
-        } else {
-          t += ' Raté.';
-        }
+        if (total >= 9) { touches.push(qui); t += ' Il te touche.'; } else { t += ' Raté.'; }
         phrases = phrases.concat([t]);
       }
-      if (!degats) { continuer(phrases); return; }
-      subir(degats, phrases.concat([au(partie.monstre.frappe)]), tourSuivant);
+      if (!touches.length) { continuer(phrases); return; }
+      var libelle = touches.length > 1 ? 'Les squelettes lancent leurs dégâts' : (partie.bande ? touches[0] : partie.monstre.Nom) + ' lance ses dégâts';
+      etape(phrases, libelle, function () {
+        var degats = 0;
+        var texte = touches.map(function (qui) {
+          var d = de();
+          var deg = Math.max(1, d + r.degats - HEROS_G.armure);
+          degats += deg;
+          return (touches.length > 1 || partie.bande ? qui + ', dégâts : ' : 'Ses dégâts : ') + d + ' plus ' + r.degats + ' moins ' + HEROS_G.armure + ' : ' + deg + '.';
+        });
+        subir(degats, texte.concat([au(partie.monstre.frappe)]));
+      });
     },
-    fuiteRatee: function (phrases) { MOTEURS.G.riposte(phrases); },
+    fuiteRatee: function (phrases) { versMonstre(phrases, MOTEURS.G.riposte); },
     journal: function (d) { return ' · assauts féroces ' + d.feroces; }
   };
 
