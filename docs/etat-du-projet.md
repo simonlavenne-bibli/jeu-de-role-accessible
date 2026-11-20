@@ -17,6 +17,7 @@ Mis à jour le 20 novembre 2026.
 - 16 images en pixel art monochrome, générées avec Canva puis converties par script, affichables en quatre couleurs.
 - Au format du jeu dans la branche `illustrations-essai` (`assets/images/`), en blanc sur noir dans le dossier Drive, originaux dans Canva.
 - Les règles de style et le bestiaire ont été ajoutés au cahier des charges sur la branche `illustrations-essai`, pas encore sur `main`.
+- Essai d'un second style le 20/11 : dessin à l'encre façon gravure, en vue subjective. Simon l'apprécie, mais le changement n'est pas validé : le pixel art reste le style décidé. 7 vignettes dans `assets/images/essai-encre/` (couloir, salle au squelette, squelette, loup-garou, Murmureur, démon, gobelin), originaux dans Canva. Les deux pistes sont décrites dans `docs/styles-illustration.md`.
 
 ### Premier prototype (branche `illustrations-essai`)
 
@@ -62,3 +63,4 @@ Mis à jour le 20 novembre 2026.
 - **Lecteur d'écran :** que fait le jeu si VoiceOver ou TalkBack est déjà actif ?
 - **Dés de chance :** réussite à 4 ou plus, ou à 5 ou plus ? Les deux sont testés.
 - **Ton des monstres :** sombre seulement, ou une touche d'humour ?
+- **Style graphique :** garder le pixel art monochrome (décidé le 15/11) ou passer au dessin à l'encre (en essai depuis le 20/11) ? Voir `docs/styles-illustration.md`.
