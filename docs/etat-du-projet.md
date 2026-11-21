@@ -43,6 +43,7 @@ Mis à jour le 20 novembre 2026.
 - Chaque combat terminé et chaque avis de testeur sont envoyés à la feuille Google « Essai des combats — résultats des testeurs ».
 - La collecte fonctionne : premiers combats reçus le 20 novembre.
 - Depuis le 20 novembre, les combats se jouent en tour par tour dans les sept systèmes. Tu lances tes dés, puis tes dégâts si le système en a. Ensuite seulement, le monstre lance ses dés, puis ses dégâts s'il te touche, chacun sur son bouton. Chaque assaut se termine par un bilan des points de vie des deux combattants (états de santé en F, squelettes encore debout en G).
+- Depuis le 21 novembre, la page est découpée en écrans : menu principal (Jouer, Avis, Résultats et journal, Réglages), une question par écran, règles page par page. En combat, seuls les compteurs (monstre à gauche, héros à droite), le récit de l'étape et les choix sont affichés. Le système C se joue uniquement au son.
 
 ## En cours
 

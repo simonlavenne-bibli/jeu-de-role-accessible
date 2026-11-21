@@ -4,6 +4,9 @@ Une ligne par décision prise par Simon, la plus récente en haut. Ne pas reveni
 
 | Date | Décision |
 |---|---|
+| 21/11/2026 | Page d'essai : menus et sous-menus, une question par écran ; un seul menu pour les 7 systèmes ; journal hors du combat ; règles page par page. |
+| 21/11/2026 | Combat : points de vie du monstre en haut à gauche, du héros en haut à droite, en valeurs seules, sans bilan écrit. Dés de chance et karma en petit sous les points de vie du héros. Jet et résultat sur le même écran. |
+| 21/11/2026 | Système C : uniquement avec l'indice sonore (l'indice texte n'est plus proposé). |
 | 21/11/2026 | Système D : on parle du bouclier du héros (« Utiliser ton bouclier »), plus compréhensible que « lancer ton armure ». |
 | 20/11/2026 | Combats en tour par tour : le joueur lance ses dés, puis ses dégâts ; ensuite seulement le monstre lance ses dés, puis ses dégâts, en deux étapes séparées. Bilan des points de vie des deux combattants à la fin de chaque assaut. |
 | 19/11/2026 | Les résultats des combats et les avis des testeurs (systèmes appréciés, système préféré) sont envoyés automatiquement vers une feuille Google. |

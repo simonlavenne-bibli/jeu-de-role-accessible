@@ -40,21 +40,29 @@
   button:focus { outline: 4px dashed var(--encre); outline-offset: 3px; }
   button:active { background: var(--encre); color: var(--fond); }
   button[disabled] { opacity: 0.55; cursor: default; }
-  #etat {
-    border: 3px solid var(--encre);
-    padding: 0.5rem 0.8rem;
-    font-weight: bold;
-    margin-bottom: 0.8rem;
-  }
+  .boutons { display: flex; flex-direction: column; gap: 0.6rem; margin: 1rem 0; }
+  .retour { margin-top: 0.6rem; font-weight: normal; min-height: 3rem; }
+  .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
+  .champ { font: inherit; width: 100%; padding: 0.5rem; margin: 0.2rem 0 0.8rem; background: var(--fond); color: var(--encre); border: 3px solid var(--encre); }
+  /* Compteurs du combat : monstre en haut à gauche, héros en haut à droite. */
+  #compteurs { display: flex; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.6rem; }
+  .compteur { border: 3px solid var(--encre); padding: 0.3rem 0.7rem; flex: 0 1 46%; }
+  #compteur-heros { text-align: right; }
+  .compteur .qui { display: block; font-size: 0.95rem; }
+  .compteur .valeur { display: block; font-size: 2.2rem; font-weight: bold; line-height: 1.1; }
+  .compteur .extra { display: block; font-size: 0.85rem; }
+  #compteurs.mots .valeur { font-size: 1.3rem; }
+  #sous-titre { margin: 0; }
+  #titre-combat { margin-top: 0.2rem; }
+  #recit { font-size: 1.35rem; }
   #recit { min-height: 6rem; margin-bottom: 0.8rem; }
-  #recit:focus { outline: 3px dashed var(--encre); outline-offset: 4px; }
-  #recit p:last-child { font-weight: bold; }
+  #recit:focus { outline: none; }
   #des { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.8rem; }
   #des button { text-align: center; min-height: 4.6rem; padding: 0.3rem; }
   #des button[aria-pressed="true"] { background: var(--encre); color: var(--fond); }
   #des .face { display: block; font-size: 1.6rem; }
   #des .sens { display: block; font-size: 0.85rem; font-weight: normal; }
-  #choix { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
+  #choix { display: flex; flex-direction: column; gap: 0.6rem; margin: 1rem 0; }
   #journal { width: 100%; min-height: 10rem; font: inherit; font-size: 0.95rem; background: var(--fond); color: var(--encre); border: 3px solid var(--encre); padding: 0.5rem; }
   .discret { font-size: 1rem; }
   [hidden] { display: none !important; }
@@ -63,110 +71,149 @@
 <body>
 <main>
 
-<!-- ============================ ACCUEIL ============================ -->
-<section id="accueil" aria-labelledby="titre-accueil">
-  <h1 id="titre-accueil">Essai des combats</h1>
-  <p>Cette page compare plusieurs façons de combattre aux dés. Choisis une famille, un système et un adversaire, puis joue.</p>
+<!-- ======================= MENU PRINCIPAL ======================= -->
+<section id="menu" class="ecran" aria-labelledby="titre-menu">
+  <h1 id="titre-menu" tabindex="-1">Essai des combats</h1>
+  <p>Compare plusieurs façons de combattre aux dés.</p>
+  <div class="boutons">
+    <button type="button" data-aller="choix-systeme">1. Jouer un combat</button>
+    <button type="button" data-aller="avis-aimes">2. Donner mon avis</button>
+    <button type="button" data-aller="resultats">3. Résultats et journal</button>
+    <button type="button" data-aller="reglages">4. Réglages</button>
+  </div>
+</section>
 
+<!-- ======================= CHOIX DU SYSTÈME ======================= -->
+<section id="choix-systeme" class="ecran" hidden aria-labelledby="titre-systeme">
+  <h1 id="titre-systeme" tabindex="-1">Choisis un système</h1>
+  <p>7 systèmes possibles.</p>
+  <div class="boutons">
+    <button type="button" data-systeme="A">A : relance risquée</button>
+    <button type="button" data-systeme="B">B : garder et relancer</button>
+    <button type="button" data-systeme="C">C : écouter le monstre</button>
+    <button type="button" data-systeme="D">D : seuil et karma</button>
+    <button type="button" data-systeme="E">E : deux actions par tour</button>
+    <button type="button" data-systeme="F">F : réserve de dés et états de santé</button>
+    <button type="button" data-systeme="G">G : 2 dés contre 9</button>
+  </div>
+  <button type="button" class="retour" data-aller="menu">Retour</button>
+</section>
+
+<!-- ======================= CONSEIL DU SYSTÈME C ======================= -->
+<section id="conseil-son" class="ecran" hidden aria-labelledby="titre-son">
+  <h1 id="titre-son" tabindex="-1">Le système C se joue au son</h1>
+  <p>Un casque aide à entendre la gauche et la droite.</p>
+  <p>Sur iPhone, coupe le mode silencieux, sinon aucun son ne sort.</p>
+  <div class="boutons">
+    <button type="button" data-aller="choix-monstre">Continuer</button>
+  </div>
+  <button type="button" class="retour" data-aller="choix-systeme">Retour</button>
+</section>
+
+<!-- ======================= CHOIX DE L'ADVERSAIRE ======================= -->
+<section id="choix-monstre" class="ecran" hidden aria-labelledby="titre-monstre">
+  <h1 id="titre-monstre" tabindex="-1">Choisis ton adversaire</h1>
+  <div class="boutons">
+    <button type="button" data-monstre="squelette">Squelette (facile)</button>
+    <button type="button" data-monstre="loup-garou">Loup-garou (moyen)</button>
+    <button type="button" data-monstre="demon">Démon (difficile)</button>
+  </div>
+  <button type="button" class="retour" data-aller="choix-systeme">Retour</button>
+</section>
+
+<!-- ============================ COMBAT ============================ -->
+<section id="combat" class="ecran" hidden aria-labelledby="titre-combat">
+  <div id="compteurs" hidden>
+    <div id="compteur-monstre" class="compteur">
+      <span class="qui" id="nom-monstre"></span>
+      <span class="valeur" id="vie-monstre"></span>
+    </div>
+    <div id="compteur-heros" class="compteur">
+      <span class="qui">Toi</span>
+      <span class="valeur" id="vie-heros"></span>
+      <span class="extra" id="extra-heros"></span>
+    </div>
+  </div>
+  <p id="sous-titre" class="discret"></p>
+  <h1 id="titre-combat">Règles</h1>
+  <div id="recit" tabindex="-1"></div>
+  <div id="des" hidden></div>
+  <div id="choix"></div>
+</section>
+
+<!-- ======================= AVIS : 3 ÉCRANS ======================= -->
+<section id="avis-aimes" class="ecran" hidden aria-labelledby="titre-aimes">
+  <h1 id="titre-aimes" tabindex="-1">Quels systèmes as-tu aimés ?</h1>
+  <p class="discret">Plusieurs choix possibles.</p>
   <fieldset>
-    <legend>Famille de systèmes</legend>
-    <label><input type="radio" name="famille" value="maison" checked> Systèmes maison : A, B et C</label>
-    <label><input type="radio" name="famille" value="inspires"> Inspirés de jeux existants : D, E, F et G</label>
-  </fieldset>
-
-  <fieldset id="menu-maison">
-    <legend>Système maison</legend>
-    <label><input type="radio" name="systeme" value="A" checked> A : relance risquée</label>
-    <label><input type="radio" name="systeme" value="B"> B : garder et relancer (inspiré de King of Tokyo)</label>
-    <label><input type="radio" name="systeme" value="C"> C : lire le monstre</label>
-  </fieldset>
-
-  <fieldset id="menu-inspires" hidden>
-    <legend>Système inspiré</legend>
-    <label><input type="radio" name="systeme-inspire" value="D" checked> D : seuil et karma (inspiré d'EZD6)</label>
-    <label><input type="radio" name="systeme-inspire" value="E"> E : deux actions par tour (inspiré de TinyD6)</label>
-    <label><input type="radio" name="systeme-inspire" value="F"> F : réserve de dés et états de santé (inspiré de Mini Six)</label>
-    <label><input type="radio" name="systeme-inspire" value="G"> G : 2 dés contre 9 (inspiré de Barbarians of Lemuria)</label>
-  </fieldset>
-
-  <fieldset id="menu-indice" hidden>
-    <legend>Indice du système C</legend>
-    <label><input type="radio" name="indice" value="sonore" checked> Sonore : on écoute le monstre</label>
-    <label><input type="radio" name="indice" value="texte"> Texte : on lit son geste</label>
-    <p class="discret">Pour l'indice sonore, un casque aide à entendre la gauche et la droite. Sur iPhone, coupe le mode silencieux, sinon aucun son ne sort.</p>
-  </fieldset>
-
-  <fieldset>
-    <legend>Adversaire</legend>
-    <label><input type="radio" name="monstre" value="squelette"> Squelette (facile)</label>
-    <label><input type="radio" name="monstre" value="loup-garou" checked> Loup-garou (moyen)</label>
-    <label><input type="radio" name="monstre" value="demon"> Démon (difficile)</label>
-  </fieldset>
-
-  <fieldset>
-    <legend>Dé de chance : réussite à partir de</legend>
-    <label><input type="radio" name="seuil-chance" value="4" checked> 4 ou plus</label>
-    <label><input type="radio" name="seuil-chance" value="5"> 5 ou plus</label>
-  </fieldset>
-
-  <label for="testeur" style="font-weight:bold;">Ton prénom ou pseudo (facultatif)</label>
-  <input id="testeur" type="text" maxlength="40" autocomplete="nickname" style="font:inherit;width:100%;padding:0.5rem;margin:0.2rem 0 0.8rem;background:var(--fond);color:var(--encre);border:3px solid var(--encre);">
-
-  <p class="discret" id="mention-collecte">Les résultats de tes combats et ton avis sont envoyés à l'équipe de La Lumière pour comparer les systèmes. Rien d'autre n'est collecté, à part le prénom ou pseudo si tu l'indiques.</p>
-
-  <button id="commencer" type="button">Lire les règles et commencer</button>
-
-  <h2>Résultats de cette séance</h2>
-  <p id="bilan" class="discret">Aucun combat joué pour l'instant.</p>
-
-  <h2 id="titre-avis">Ton avis</h2>
-  <p class="discret">Après avoir essayé les systèmes, dis-nous lesquels tu as aimés. Tu peux renvoyer un avis plus tard si tu changes d'idée.</p>
-  <fieldset>
-    <legend>Quels systèmes as-tu aimés ? (plusieurs choix possibles)</legend>
+    <legend>Systèmes aimés</legend>
     <label><input type="checkbox" name="apprecie" value="A"> A : relance risquée</label>
     <label><input type="checkbox" name="apprecie" value="B"> B : garder et relancer</label>
-    <label><input type="checkbox" name="apprecie" value="C"> C : lire ou écouter le monstre</label>
+    <label><input type="checkbox" name="apprecie" value="C"> C : écouter le monstre</label>
     <label><input type="checkbox" name="apprecie" value="D"> D : seuil et karma</label>
     <label><input type="checkbox" name="apprecie" value="E"> E : deux actions par tour</label>
     <label><input type="checkbox" name="apprecie" value="F"> F : réserve de dés et états de santé</label>
     <label><input type="checkbox" name="apprecie" value="G"> G : 2 dés contre 9</label>
   </fieldset>
+  <div class="boutons"><button type="button" data-aller="avis-prefere">Suivant</button></div>
+  <button type="button" class="retour" data-aller="menu">Retour</button>
+</section>
+
+<section id="avis-prefere" class="ecran" hidden aria-labelledby="titre-prefere">
+  <h1 id="titre-prefere" tabindex="-1">Si tu ne devais en garder qu'un ?</h1>
   <fieldset>
-    <legend>Si tu ne devais en garder qu'un ?</legend>
+    <legend>Système préféré</legend>
     <label><input type="radio" name="prefere" value="A"> A : relance risquée</label>
     <label><input type="radio" name="prefere" value="B"> B : garder et relancer</label>
-    <label><input type="radio" name="prefere" value="C"> C : lire ou écouter le monstre</label>
+    <label><input type="radio" name="prefere" value="C"> C : écouter le monstre</label>
     <label><input type="radio" name="prefere" value="D"> D : seuil et karma</label>
     <label><input type="radio" name="prefere" value="E"> E : deux actions par tour</label>
     <label><input type="radio" name="prefere" value="F"> F : réserve de dés et états de santé</label>
     <label><input type="radio" name="prefere" value="G"> G : 2 dés contre 9</label>
     <label><input type="radio" name="prefere" value="aucun" checked> Je ne sais pas</label>
   </fieldset>
-  <label for="commentaire" style="font-weight:bold;">Un commentaire ? (facultatif)</label>
-  <textarea id="commentaire" maxlength="1000" rows="4" style="font:inherit;width:100%;padding:0.5rem;margin:0.2rem 0 0.8rem;background:var(--fond);color:var(--encre);border:3px solid var(--encre);"></textarea>
-  <button id="envoyer-avis" type="button">Envoyer mon avis</button>
+  <div class="boutons"><button type="button" data-aller="avis-commentaire">Suivant</button></div>
+  <button type="button" class="retour" data-aller="avis-aimes">Retour</button>
+</section>
+
+<section id="avis-commentaire" class="ecran" hidden aria-labelledby="titre-commentaire">
+  <h1 id="titre-commentaire" tabindex="-1">Un commentaire ?</h1>
+  <label for="commentaire" class="discret">Facultatif.</label>
+  <textarea id="commentaire" maxlength="1000" rows="5" class="champ"></textarea>
+  <div class="boutons"><button id="envoyer-avis" type="button">Envoyer mon avis</button></div>
   <p id="info-avis" class="discret" role="status"></p>
+  <button type="button" class="retour" data-aller="avis-prefere">Retour</button>
+  <button type="button" class="retour" data-aller="menu">Menu principal</button>
 </section>
 
-<!-- ============================ COMBAT ============================ -->
-<section id="combat" hidden aria-labelledby="titre-combat">
-  <h1 id="titre-combat">Combat</h1>
-  <p id="etat"></p>
-  <div id="recit" tabindex="-1"></div>
-  <div id="des" hidden></div>
-  <div id="choix"></div>
-</section>
-
-<!-- ============================ JOURNAL ============================ -->
-<section aria-labelledby="titre-journal">
-  <h2 id="titre-journal">Journal des combats</h2>
+<!-- ======================= RÉSULTATS ET JOURNAL ======================= -->
+<section id="resultats" class="ecran" hidden aria-labelledby="titre-resultats">
+  <h1 id="titre-resultats" tabindex="-1">Résultats et journal</h1>
+  <h2>Cette séance</h2>
+  <p id="bilan">Aucun combat joué pour l'instant.</p>
+  <h2>Journal des combats</h2>
   <p class="discret">Chaque combat terminé s'ajoute ici. Copie le journal et envoie-le après la séance de test.</p>
   <textarea id="journal" readonly aria-label="Journal des combats"></textarea>
-  <div id="outils-journal" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.5rem;">
+  <div class="deux">
     <button id="copier" type="button">Copier le journal</button>
     <button id="effacer" type="button">Effacer le journal</button>
   </div>
   <p id="info-copie" class="discret" role="status"></p>
+  <button type="button" class="retour" data-aller="menu">Retour</button>
+</section>
+
+<!-- ============================ RÉGLAGES ============================ -->
+<section id="reglages" class="ecran" hidden aria-labelledby="titre-reglages">
+  <h1 id="titre-reglages" tabindex="-1">Réglages</h1>
+  <label for="testeur"><strong>Ton prénom ou pseudo</strong> (facultatif)</label>
+  <input id="testeur" type="text" maxlength="40" autocomplete="nickname" class="champ">
+  <fieldset>
+    <legend>Dé de chance : réussite à partir de</legend>
+    <label><input type="radio" name="seuil-chance" value="4" checked> 4 ou plus</label>
+    <label><input type="radio" name="seuil-chance" value="5"> 5 ou plus</label>
+  </fieldset>
+  <p class="discret" id="mention-collecte">Les résultats de tes combats et ton avis sont envoyés à l'équipe de La Lumière pour comparer les systèmes. Rien d'autre n'est collecté, à part le prénom ou pseudo si tu l'indiques.</p>
+  <button type="button" class="retour" data-aller="menu">Retour</button>
 </section>
 
 </main>
@@ -253,22 +300,51 @@
   }
 
   // =====================================================================
-  // ÉCRAN
+  // ÉCRANS ET MENUS
   // =====================================================================
-  var ecranAccueil = document.getElementById('accueil');
   var ecranCombat = document.getElementById('combat');
-  var zoneEtat = document.getElementById('etat');
+  var zoneCompteurs = document.getElementById('compteurs');
   var zoneRecit = document.getElementById('recit');
   var zoneDes = document.getElementById('des');
   var zoneChoix = document.getElementById('choix');
   var zoneJournal = document.getElementById('journal');
   var zoneBilan = document.getElementById('bilan');
+  var titreCombat = document.getElementById('titre-combat');
 
   var partie = null;
+  var choix = { systeme: null, monstre: null };
 
-  // Écrit le récit et place le focus dessus, pour qu'un lecteur d'écran le lise.
+  // Affiche un seul écran à la fois et place le focus sur son titre.
+  function montrer(id) {
+    document.querySelectorAll('.ecran').forEach(function (e) { e.hidden = (e.id !== id); });
+    if (id === 'resultats') { afficherBilan(); }
+    var titre = document.querySelector('#' + id + ' h1');
+    if (id !== 'combat' && titre) { titre.focus(); }
+    window.scrollTo(0, 0);
+  }
+
+  document.querySelectorAll('[data-aller]').forEach(function (b) {
+    b.addEventListener('click', function () { montrer(b.getAttribute('data-aller')); });
+  });
+  document.querySelectorAll('[data-systeme]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      choix.systeme = b.getAttribute('data-systeme');
+      montrer(choix.systeme === 'C' ? 'conseil-son' : 'choix-monstre');
+    });
+  });
+  document.querySelectorAll('[data-monstre]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      choix.monstre = b.getAttribute('data-monstre');
+      commencer();
+    });
+  });
+
+  function titre(texte) { titreCombat.textContent = texte; }
+
+  // Écrit le récit de l'écran et place le focus dessus, pour qu'un lecteur d'écran le lise.
   function raconter(phrases) {
     zoneRecit.textContent = '';
+    zoneChoix.textContent = '';
     phrases.forEach(function (texte) {
       if (!texte) { return; }
       var p = document.createElement('p');
@@ -276,27 +352,37 @@
       zoneRecit.appendChild(p);
       partie.trace.push(texte);
     });
-    afficherEtat();
+    afficherCompteurs();
+    window.scrollTo(0, 0);
     zoneRecit.focus();
   }
 
-  // Où en sont les combattants (points de vie, ou états de santé en F).
-  function texteEtat() {
+  // Compteurs : le monstre en haut à gauche, le héros en haut à droite.
+  // Seulement des valeurs, mises à jour à chaque écran.
+  function afficherCompteurs() {
+    document.getElementById('sous-titre').hidden = !!(partie && partie.tours > 0);
+    if (!partie || !partie.enCombat) { zoneCompteurs.hidden = true; return; }
+    var c = {
+      monstre: partie.monstre.Nom.replace(/^Le /, '').replace(/^./, function (l) { return l.toUpperCase(); }),
+      valeurMonstre: String(Math.max(0, partie.vieMonstre)),
+      valeurHeros: String(Math.max(0, partie.vie)),
+      extra: [pluriel(partie.chances, 'dé de chance', 'dés de chance')],
+      mots: false
+    };
     var m = MOTEURS[partie.systeme];
-    if (m && m.etat) { return m.etat(); }
-    return 'Toi : ' + pv(partie.vie) + ' sur ' + partie.vieMax +
-      ', ' + pluriel(partie.chances, 'dé de chance', 'dés de chance') +
-      '. ' + partie.monstre.Nom + ' : ' + pv(Math.max(0, partie.vieMonstre)) + '.';
-  }
-
-  function afficherEtat() {
-    zoneEtat.textContent = partie ? texteEtat() : '';
+    if (m && m.compteurs) { m.compteurs(c); }
+    document.getElementById('nom-monstre').textContent = c.monstre;
+    document.getElementById('vie-monstre').textContent = c.valeurMonstre;
+    document.getElementById('vie-heros').textContent = c.valeurHeros;
+    document.getElementById('extra-heros').textContent = c.extra.join(' · ');
+    zoneCompteurs.classList.toggle('mots', c.mots);
+    zoneCompteurs.hidden = false;
   }
 
   // choix = [[libellé, fonction], …]
-  function proposer(choix) {
+  function proposer(liste) {
     zoneChoix.textContent = '';
-    choix.forEach(function (c, i) {
+    liste.forEach(function (c, i) {
       var b = document.createElement('button');
       b.type = 'button';
       b.textContent = (i + 1) + '. ' + c[0];
@@ -317,22 +403,11 @@
   // =====================================================================
   // DÉROULEMENT COMMUN
   // =====================================================================
-  function systemeChoisi() {
-    return lireRadio('famille') === 'inspires' ? lireRadio('systeme-inspire') : lireRadio('systeme');
-  }
-
-  function majMenus() {
-    var maison = lireRadio('famille') !== 'inspires';
-    document.getElementById('menu-maison').hidden = !maison;
-    document.getElementById('menu-inspires').hidden = maison;
-    document.getElementById('menu-indice').hidden = !(maison && lireRadio('systeme') === 'C');
-  }
-  ecranAccueil.addEventListener('change', majMenus);
-  majMenus();
+  var NOMS_SYSTEMES = { A: 'A, relance risquée', B: 'B, garder et relancer', C: 'C, écouter le monstre' };
 
   function commencer() {
-    var systeme = systemeChoisi();
-    var cle = lireRadio('monstre');
+    var systeme = choix.systeme;
+    var cle = choix.monstre;
     var monstre = MONSTRES[cle];
     partie = {
       systeme: systeme,
@@ -340,8 +415,9 @@
       monstre: monstre,
       regles: monstre[systeme],
       seuilChance: parseInt(lireRadio('seuil-chance'), 10),
-      indice: lireRadio('indice'),
+      indice: 'sonore',
       minuteurSon: null,
+      enCombat: false,
       vie: HEROS.vie,
       vieMax: HEROS.vie,
       chances: HEROS.desDeChance,
@@ -352,17 +428,33 @@
     };
     var moteur = MOTEURS[systeme];
     if (moteur) { moteur.init(); }
-    if (systeme === 'C' && partie.indice === 'sonore' && !preparerAudio()) {
+    if (systeme === 'C' && !preparerAudio()) {
       partie.indice = 'texte'; // navigateur sans son : on retombe sur le texte
     }
-    ecranAccueil.hidden = true;
-    ecranCombat.hidden = false;
     zoneDes.hidden = true;
-    var noms = { A: 'A, relance risquée', B: 'B, garder et relancer',
-      C: partie.indice === 'sonore' ? 'C, écouter le monstre' : 'C, lire le monstre' };
-    if (moteur) { noms[systeme] = moteur.nom; }
-    document.getElementById('titre-combat').textContent = 'Combat ' + noms[systeme] + ', contre ' + monstre.nom;
-    raconter(reglesDuSysteme().concat([(moteur && moteur.entree && moteur.entree()) || monstre.entree]));
+    document.getElementById('sous-titre').textContent =
+      'Système ' + (moteur ? moteur.nom : NOMS_SYSTEMES[systeme]) + ' · contre ' + monstre.nom;
+    montrer('combat');
+    montrerRegle(0);
+  }
+
+  // Les règles, une page à la fois.
+  function montrerRegle(i) {
+    var pages = reglesDuSysteme();
+    titre('Règles · ' + (i + 1) + ' sur ' + pages.length);
+    raconter([pages[i].replace(/^Règles\. /, '').replace(/^Règles, inspirées /, 'Inspiré ')]);
+    var suite = i + 1 < pages.length
+      ? [['Suivant', function () { montrerRegle(i + 1); }], ['Passer les règles', entreeEnScene]]
+      : [['Voir l\'adversaire', entreeEnScene]];
+    if (i > 0) { suite.push(['Règle précédente', function () { montrerRegle(i - 1); }]); }
+    proposer(suite);
+  }
+
+  function entreeEnScene() {
+    var moteur = MOTEURS[partie.systeme];
+    partie.enCombat = true;
+    titre('Ton adversaire');
+    raconter([(moteur && moteur.entree && moteur.entree()) || partie.monstre.entree]);
     proposer([['Commencer le combat', tourSuivant]]);
   }
 
@@ -402,6 +494,7 @@
 
   function tourSuivant() {
     partie.tours += 1;
+    titre(((partie.systeme === 'B' || partie.systeme === 'E') ? 'Tour ' : 'Assaut ') + partie.tours);
     if (MOTEURS[partie.systeme]) { MOTEURS[partie.systeme].tour(); }
     else if (partie.systeme === 'A') { tourA(); } else if (partie.systeme === 'B') { tourB(); } else { tourC(); }
   }
@@ -433,8 +526,7 @@
 
   // Les deux tours sont finis : on dit où en sont les combattants.
   function finAssaut(phrases) {
-    var mot = (partie.systeme === 'B' || partie.systeme === 'E') ? 'Fin du tour ' : 'Fin de l\'assaut ';
-    raconter(phrases.concat([mot + partie.tours + '. ' + texteEtat()]));
+    raconter(phrases);
     proposer([['Continuer', tourSuivant]]);
   }
   function continuer(phrases) { finAssaut(phrases); }
@@ -484,8 +576,11 @@
     partie.decisions.fuites += 1;
     var lu = 'Tu tentes de fuir : ' + resultat + '. Il fallait ' + r.fuite + ' ou plus.';
     if (resultat >= r.fuite) {
-      raconter([lu, 'Tu recules d\'un bond et claques la porte derrière toi.']);
-      terminer('fuite');
+      etape([lu, 'Tu recules d\'un bond et claques la porte derrière toi.'], 'Suite', function () {
+        titre('Tu as fui');
+        raconter(['Tu as échappé à ' + partie.monstre.nom + '.']);
+        terminer('fuite');
+      });
       return;
     }
     var barre = partie.monstre.Nom + ' te barre le passage.';
@@ -498,13 +593,17 @@
 
   function vaincre(phrases) {
     var m = MOTEURS[partie.systeme];
-    raconter(phrases.concat([(m && m.mort && m.mort()) || partie.monstre.mort, 'Victoire !']));
-    terminer('victoire');
+    etape(phrases.concat([(m && m.mort && m.mort()) || partie.monstre.mort]), 'Suite', function () {
+      titre('Victoire !');
+      raconter(['Tu as vaincu ' + partie.monstre.nom + '.']);
+      terminer('victoire');
+    });
   }
 
   function mourir() {
     partie.vie = 0;
-    raconter(['Le noir se referme sur toi. Tu es mort.']);
+    titre('Tu es mort');
+    raconter(['Le noir se referme sur toi.']);
     terminer('mort');
   }
 
@@ -512,7 +611,7 @@
   // SYSTÈME A : relance risquée
   // =====================================================================
   function tourA() {
-    raconter(['Assaut ' + partie.tours + '.']);
+    raconter(['Que fais-tu ?']);
     proposer(choixDuTour());
   }
 
@@ -530,8 +629,7 @@
     var dm = [de(), de()];
     var tm = dm[0] + dm[1] + r.habilete;
     var phrases = [
-      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Avec son habileté : ' + tm + '.',
-      'Ton total : ' + th + '. Le sien : ' + tm + '.'
+      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Avec son habileté : ' + tm + ', contre ton ' + th + '.'
     ];
     if (th > tm) { toucherA(phrases); return; }
     if (th === tm) {
@@ -607,7 +705,7 @@
   }
 
   function tourB() {
-    raconter(['Tour ' + partie.tours + '.']);
+    raconter(['Que fais-tu ?']);
     zoneDes.hidden = true;
     proposer(choixDuTour());
   }
@@ -868,7 +966,7 @@
       ['Fuir', fuir]
     ];
     if (partie.indice !== 'sonore') {
-      raconter(['Assaut ' + partie.tours + '.', au(partie.monstre.signes[intention])]);
+      raconter([au(partie.monstre.signes[intention])]);
       proposer(choix);
       return;
     }
@@ -876,7 +974,7 @@
     var variante = tirerVariante();
     var cle = partie.cleMonstre;
     var reecoute = false;
-    raconter(['Assaut ' + partie.tours + '. Écoute ' + partie.monstre.nom + '…']);
+    raconter(['Écoute ' + partie.monstre.nom + '…']);
     choix.push(['Réécouter', function () {
       if (reecoute) { return; }
       reecoute = true;
@@ -913,8 +1011,7 @@
     var dm = [de(), de()];
     var tm = dm[0] + dm[1] + r.habilete;
     var phrases = [
-      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Total : ' + tm + '.',
-      'Ton total : ' + th + '. Le sien : ' + tm + '.'
+      partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Total : ' + tm + ', contre ton ' + th + '.'
     ];
     if (th > tm) {
       var inflige = 2 + (posture === 'attaquer' ? 1 : 0);
@@ -1003,12 +1100,9 @@
         'Ensuite ' + partie.monstre.nom + ' attaque : il te touche sur ' + r.attaque + ' ou plus. S\'il touche, tu utilises ton bouclier : tu lances un dé, et sur ' + HEROS_D.armure + ' ou plus, ton bouclier arrête le coup. Sinon tu perds ' + pv(r.degats) + '.'
       ];
     },
-    etat: function () {
-      return 'Toi : ' + pv(partie.vie) + ' sur ' + partie.vieMax + ', ' + pluriel(partie.karma, 'point de karma', 'points de karma') +
-        ', ' + pluriel(partie.chances, 'dé de chance', 'dés de chance') + '. ' + partie.monstre.Nom + ' : ' + pv(Math.max(0, partie.vieMonstre)) + '.';
-    },
+    compteurs: function (c) { c.extra.push(pluriel(partie.karma, 'point de karma', 'points de karma')); },
     tour: function () {
-      raconter(['Assaut ' + partie.tours + '.']);
+      raconter(['Que fais-tu ?']);
       proposer([['Attaquer', MOTEURS.D.attaque], ['Fuir', fuir]]);
     },
     attaque: function () {
@@ -1097,7 +1191,7 @@
     tour: function () {
       partie.actions = 2;
       partie.esquive = false;
-      MOTEURS.E.menu(['Tour ' + partie.tours + '.']);
+      MOTEURS.E.menu([]);
     },
     menu: function (phrases) {
       var t = 'Il te reste ' + pluriel(partie.actions, 'action', 'actions') + '.';
@@ -1196,12 +1290,14 @@
         partie.monstre.Nom + ' attaque avec ' + r.des + ' dés contre ta parade de ' + HEROS_F.parade + ', et ses dégâts, ' + r.degatsDes + ' dés plus ' + r.degatsBonus + ', contre ta vigueur de ' + HEROS_F.vigueur + '.'
       ];
     },
-    etat: function () {
-      return 'Toi : ' + ETATS_F[partie.niveauHeros] + ', ' + pluriel(partie.chances, 'dé de chance', 'dés de chance') + '. ' +
-        partie.monstre.Nom + ' : ' + ETATS_F[partie.niveauMonstre] + '.';
+    // Pas de points de vie en F : on affiche l'état de santé.
+    compteurs: function (c) {
+      c.valeurMonstre = ETATS_F[partie.niveauMonstre];
+      c.valeurHeros = ETATS_F[partie.niveauHeros];
+      c.mots = true;
     },
     tour: function () {
-      raconter(['Assaut ' + partie.tours + '.']);
+      raconter(['Que fais-tu ?']);
       proposer([['Attaquer', MOTEURS.F.attaque], ['Fuir', fuir]]);
     },
     attaque: function () {
@@ -1282,20 +1378,16 @@
         ? 'Tu affrontes une bande de ' + partie.bande + ' squelettes. Chaque touche en abat un. Avec 12 ou plus, coup héroïque : tu en abats deux.'
         : 'Chaque touche retire 1 dé plus 1, moins son armure de ' + r.armure + ', avec au moins 1. ' + partie.monstre.Nom + ' a ' + pv(r.vie) + '.';
       return [
-        'Règles, inspirées de Barbarians of Lemuria. Tu lances 2 dés, tu ajoutes 3 et tu retires la défense de ' + partie.monstre.nom + ' : ' + r.defense + '. Il faut 9 ou plus pour toucher.',
+        'Règles, inspirées de Barbarians of Lemuria. Tu lances 2 dés, tu ajoutes 3 et tu retires la défense ' + duMonstre() + ' : ' + r.defense + '. Il faut 9 ou plus pour toucher.',
         cible,
         'Assaut féroce : tu lances 3 dés et gardes les 2 meilleurs, mais à son attaque suivante, ' + (partie.bande ? 'chaque squelette fait' : partie.monstre.nom + ' fait') + ' de même.',
         (partie.bande ? 'Chaque squelette debout attaque' : partie.monstre.Nom + ' attaque') + ' avec 2 dés plus ' + r.attaque + ', moins ta défense de ' + HEROS_G.defense + ' : 9 ou plus te touche. Dégâts : 1 dé plus ' + r.degats + ', moins ton armure de ' + HEROS_G.armure + '. Tu as ' + pv(HEROS_G.vie) + '.'
       ];
     },
-    etat: function () {
-      var cible = partie.bande
-        ? 'Squelettes : ' + Math.max(0, partie.vieMonstre) + ' debout sur ' + partie.bande + '.'
-        : partie.monstre.Nom + ' : ' + pv(Math.max(0, partie.vieMonstre)) + '.';
-      return 'Toi : ' + pv(partie.vie) + ' sur ' + partie.vieMax + ', ' + pluriel(partie.chances, 'dé de chance', 'dés de chance') + '. ' + cible;
-    },
+    // Contre la bande : le nombre de squelettes encore debout.
+    compteurs: function (c) { if (partie.bande) { c.monstre = 'Squelettes debout'; } },
     tour: function () {
-      raconter(['Assaut ' + partie.tours + '.']);
+      raconter(['Que fais-tu ?']);
       proposer([
         ['Attaquer', function () { MOTEURS.G.attaque(false); }],
         ['Assaut féroce', function () { MOTEURS.G.attaque(true); }],
@@ -1472,15 +1564,14 @@
     afficherBilan();
     proposer([
       ['Rejouer le même combat', function () { commencer(); }],
-      ['Changer de système ou d\'adversaire', retourAccueil]
+      ['Changer de combat', function () { quitterCombat('choix-systeme'); }],
+      ['Menu principal', function () { quitterCombat('menu'); }]
     ]);
   }
 
-  function retourAccueil() {
+  function quitterCombat(ecran) {
     partie = null;
-    ecranCombat.hidden = true;
-    ecranAccueil.hidden = false;
-    document.getElementById('commencer').focus();
+    montrer(ecran);
   }
 
   function afficherBilan() {
@@ -1527,7 +1618,6 @@
     document.getElementById('info-copie').textContent = 'Journal effacé.';
   });
 
-  document.getElementById('commencer').addEventListener('click', commencer);
 })();
 </script>
 </body>
