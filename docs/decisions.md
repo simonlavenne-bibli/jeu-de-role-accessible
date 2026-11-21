@@ -4,6 +4,7 @@ Une ligne par décision prise par Simon, la plus récente en haut. Ne pas reveni
 
 | Date | Décision |
 |---|---|
+| 21/11/2026 | Dés en 3D validés et ajoutés à l'essai des combats : chaque jet du héros et du monstre roule à l'écran avec son bruit. |
 | 21/11/2026 | Dés en 3D : animation de 1,5 seconde, bruit de dés fabriqué par le programme (un enregistrement réel pourra le remplacer plus tard). Essayé d'abord sur une page à part. |
 | 21/11/2026 | Page d'essai : menus et sous-menus, une question par écran ; un seul menu pour les 7 systèmes ; journal hors du combat ; règles page par page. |
 | 21/11/2026 | Combat : points de vie du monstre en haut à gauche, du héros en haut à droite, en valeurs seules, sans bilan écrit. Dés de chance et karma en petit sous les points de vie du héros. Jet et résultat sur le même écran. |
