@@ -251,12 +251,18 @@
   <div class="boutons">
     <button type="button" data-son="apparition:squelette">Arrivée du squelette</button>
     <button type="button" data-son="douleur:squelette">Squelette touché</button>
+    <button type="button" data-son="rage:squelette:0.2">Squelette enragé</button>
+    <button type="button" data-son="rage:squelette:1">Squelette furieux, presque mort</button>
     <button type="button" data-son="mort:squelette">Mort du squelette</button>
     <button type="button" data-son="apparition:loup-garou">Arrivée du loup-garou</button>
     <button type="button" data-son="douleur:loup-garou">Loup-garou touché</button>
+    <button type="button" data-son="rage:loup-garou:0.2">Loup-garou enragé</button>
+    <button type="button" data-son="rage:loup-garou:1">Loup-garou furieux, presque mort</button>
     <button type="button" data-son="mort:loup-garou">Mort du loup-garou</button>
     <button type="button" data-son="apparition:demon">Arrivée du démon</button>
     <button type="button" data-son="douleur:demon">Démon touché</button>
+    <button type="button" data-son="rage:demon:0.2">Démon enragé</button>
+    <button type="button" data-son="rage:demon:1">Démon furieux, presque mort</button>
     <button type="button" data-son="mort:demon">Mort du démon</button>
   </div>
   <h2>Le combat</h2>
@@ -455,6 +461,13 @@
     return { monstre: partie.vieMonstre, heros: partie.vie, etatMonstre: partie.niveauMonstre || 0, etatHeros: partie.niveauHeros || 0 };
   }
 
+  // 0 : monstre en pleine forme ; 1 : presque mort.
+  function fureurDuMonstre() {
+    if (partie.systeme === 'F') { return (partie.niveauMonstre || 0) / 3; }
+    var depart = partie.bande || partie.regles.vie || partie.vieMonstre || 1;
+    return Math.max(0, Math.min(1, 1 - Math.max(0, partie.vieMonstre) / depart));
+  }
+
   // Joue les bruitages de l'écran qui vient d'apparaître.
   // jets : des dés ont été lancés pour arriver à cet écran.
   function bruitages(jets) {
@@ -473,7 +486,11 @@
     var monstreBlesse = apres.monstre < avant.monstre || apres.etatMonstre > avant.etatMonstre;
     var herosBlesse = apres.heros < avant.heros || apres.etatHeros > avant.etatHeros;
     var monstreMort = partie.vieMonstre <= 0 || (partie.niveauMonstre || 0) >= 4;
-    if (monstreBlesse) { Sons.jouer(monstreMort ? 'mort' : 'douleur', cle); }
+    if (monstreBlesse) {
+      Sons.jouer(monstreMort ? 'mort' : 'douleur', cle);
+      // Touché mais debout : il enrage, d'autant plus qu'il lui reste peu de vie.
+      if (!monstreMort) { Sons.jouer('rage', cle, { delai: 0.6, fureur: fureurDuMonstre() }); }
+    }
     if (herosBlesse) { Sons.jouer('touche-heros'); }
     if (monstreBlesse || herosBlesse || !jets) { return; }
     // Personne n'est blessé : coup paré, ou coup dans le vide.
@@ -490,7 +507,7 @@
       var morceaux = b.getAttribute('data-son').split(':');
       Sons.preparer();
       Sons.activer(true);
-      Sons.jouer(morceaux[0], morceaux[1]);
+      Sons.jouer(morceaux[0], morceaux[1], { fureur: parseFloat(morceaux[2] || '0') });
       Sons.activer(caseSons.checked);
     });
   });

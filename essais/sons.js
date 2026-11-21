@@ -170,6 +170,63 @@
       souffle(t + 0.1, { type: 'lowpass', f1: 600, f2: 200, duree: 0.4, volume: 0.15 });
     },
 
+    // --- Cris de rage : le monstre touché se reprend et enrage ---
+    // f (fureur) : 0 en pleine forme, 1 quand il ne lui reste presque plus de vie.
+    // v (variante) : 0, 1 ou 2, tirée au hasard pour éviter la répétition.
+    'rage-squelette': function (t, f, v) {
+      // Claquement de mâchoire et sifflement rauque.
+      var claquements = function (debut, nombre) {
+        for (var i = 0; i < nombre; i += 1) {
+          clic(debut + i * (0.04 - f * 0.012), entre(1700, 2600), 0.3 + f * 0.2, entre(-0.3, 0.3));
+        }
+      };
+      var siffle = function (debut) {
+        souffle(debut, { type: 'highpass', f1: 2600 - f * 600, f2: 4800, duree: 0.45 + f * 0.25, volume: 0.12 + f * 0.1, attaque: 0.05 });
+      };
+      var n = 6 + Math.round(f * 6);
+      if (v === 0) { claquements(t, n); siffle(t + n * 0.035); }
+      else if (v === 1) { siffle(t); claquements(t + 0.35, n); }
+      else { claquements(t, Math.ceil(n / 2)); claquements(t + 0.4, n); siffle(t + 0.3); }
+    },
+    'rage-loup-garou': function (t, f, v) {
+      var k = 1 + f * 0.25;
+      // Le grognement : voix grave qui gronde, puis monte en aboiement.
+      var grogne = function (debut, duree) {
+        note(debut, { type: 'sawtooth', f1: 95 * k, f2: 120 * k, duree: duree, volume: 0.22 + f * 0.1, attaque: 0.06, filtre: 750, vibrato: [24, 14] });
+        souffle(debut, { type: 'bandpass', f1: 500, f2: 700, q: 3, duree: duree, volume: 0.06 + f * 0.05, attaque: 0.06 });
+      };
+      var aboie = function (debut) {
+        note(debut, { type: 'sawtooth', f1: 380 * k, f2: 640 * k, duree: 0.07, volume: 0.24 + f * 0.08, attaque: 0.005, filtre: 2600 });
+        note(debut + 0.07, { type: 'sawtooth', f1: 640 * k, f2: 300 * k, duree: 0.12, volume: 0.24 + f * 0.08, attaque: 0.005, filtre: 2400 });
+      };
+      var aboiements = (v === 1 ? 2 : 1) + (f > 0.6 ? 1 : 0);
+      var debut = t;
+      if (v === 2) {
+        // Babines retroussées : un souffle rageur à la place du grognement.
+        souffle(t, { type: 'bandpass', f1: 900, f2: 1300, q: 4, duree: 0.45, volume: 0.16 + f * 0.08, attaque: 0.03 });
+        debut += 0.45;
+      } else {
+        grogne(t, 0.55 - f * 0.15);
+        debut += 0.55 - f * 0.15;
+      }
+      for (var i = 0; i < aboiements; i += 1) { aboie(debut + i * 0.24); }
+    },
+    'rage-demon': function (t, f, v) {
+      var k = 1 + f * 0.2;
+      var contours = [[80, 115, 70], [70, 70, 55], [100, 140, 85]];
+      var c = contours[v];
+      var duree = 0.7 + f * 0.3;
+      // Rugissement court : monte, tient, retombe.
+      note(t, { type: 'sawtooth', f1: c[0] * k, f2: c[1] * k, duree: duree * 0.4, volume: 0.3 + f * 0.1, attaque: 0.05, filtre: 900, vibrato: [11, 10] });
+      note(t + duree * 0.4, { type: 'sawtooth', f1: c[1] * k, f2: c[2] * k, duree: duree * 0.6, volume: 0.3 + f * 0.1, attaque: 0.01, filtre: 800, vibrato: [11, 12] });
+      note(t, { type: 'square', f1: c[0] * k / 2, f2: c[2] * k / 2, duree: duree, volume: 0.15, attaque: 0.05, filtre: 300 });
+      // Crépitement de feu autour de lui.
+      for (var i = 0; i < 10 + Math.round(f * 12); i += 1) {
+        clic(t + 0.1 + Math.random() * duree, entre(600, 1600), 0.12 + f * 0.1, entre(-0.9, 0.9));
+      }
+      souffle(t + 0.2, { type: 'bandpass', f1: 700, f2: 2400, q: 0.8, duree: duree, volume: 0.1 + f * 0.1, attaque: 0.15 });
+    },
+
     // --- Mort des monstres ---
     'mort-squelette': function (t) {
       for (var i = 0; i < 16; i += 1) { clic(t + i * entre(0.03, 0.08), entre(1500, 4000), 0.35 * (1 - i / 20), entre(-0.8, 0.8)); }
@@ -243,12 +300,15 @@
   /**
    * Joue un bruitage. Pour les sons propres à un monstre, donner sa clé :
    * Sons.jouer('apparition', 'demon'), Sons.jouer('douleur', 'squelette'), Sons.jouer('mort', 'loup-garou').
+   * Options : { delai: secondes avant le son, fureur: 0 à 1 (cris de rage) }.
    */
-  function jouer(nom, monstre) {
+  function jouer(nom, monstre, options) {
     if (!actif || !preparer()) { return; }
+    options = options || {};
     var cle = monstre ? nom + '-' + monstre : nom;
     var bruitage = BRUITAGES[cle];
-    if (bruitage) { bruitage(audio.currentTime + 0.03); }
+    var fureur = Math.max(0, Math.min(1, options.fureur || 0));
+    if (bruitage) { bruitage(audio.currentTime + 0.03 + (options.delai || 0), fureur, Math.floor(Math.random() * 3)); }
   }
 
   // ---------------------------------------------------------------------
