@@ -10,6 +10,12 @@ Une ligne par décision prise par Simon, la plus récente en haut. Ne pas reveni
 | 21/11/2026 | Page d'essai : menus et sous-menus, une question par écran ; un seul menu pour les 7 systèmes ; journal hors du combat ; règles page par page. |
 | 21/11/2026 | Combat : points de vie du monstre en haut à gauche, du héros en haut à droite, en valeurs seules, sans bilan écrit. Dés de chance et karma en petit sous les points de vie du héros. Jet et résultat sur le même écran. |
 | 21/11/2026 | Système C : uniquement avec l'indice sonore (l'indice texte n'est plus proposé). |
+| 21/11/2026 | Intrigue générale de Simon adoptée (`docs/intrigue.md`) : Legia, le mayeur et les guildes, la cathédrale de la Lumière, le pacte avec un démon, les francs-tireurs piégés dans les catacombes. |
+| 21/11/2026 | Les francs-tireurs forment un groupe de quatre ; un seul survit à l'effondrement. Plus tard, le joueur pourra choisir le survivant (guerrier, mage, voleur…). |
+| 21/11/2026 | Le joueur est tutoyé, sans nom ni genre dans les textes : tout s'enregistre une seule fois. Un nom et un genre choisis pourront s'afficher à l'écran seulement. |
+| 21/11/2026 | Le pacte est organisé par un petit cercle mené par le frère hospitalier ; la plupart des frères l'ignorent. |
+| 21/11/2026 | Le culte s'appelle la Lumière, en clin d'œil voulu à la bibliothèque. |
+| 21/11/2026 | Prologue écrit à la manière d'un roman, pour l'immersion, pas descriptif. |
 | 21/11/2026 | Système D : on parle du bouclier du héros (« Utiliser ton bouclier »), plus compréhensible que « lancer ton armure ». |
 | 20/11/2026 | Combats en tour par tour : le joueur lance ses dés, puis ses dégâts ; ensuite seulement le monstre lance ses dés, puis ses dégâts, en deux étapes séparées. Bilan des points de vie des deux combattants à la fin de chaque assaut. |
 | 19/11/2026 | Les résultats des combats et les avis des testeurs (systèmes appréciés, système préféré) sont envoyés automatiquement vers une feuille Google. |

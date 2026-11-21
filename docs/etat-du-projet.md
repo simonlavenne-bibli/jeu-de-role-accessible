@@ -1,6 +1,6 @@
 # État du projet
 
-Mis à jour le 20 novembre 2026.
+Mis à jour le 21 novembre 2026.
 
 **En une phrase :** la conception est posée, l'habillage (images, sons, voix) est en pause, et on teste en texte seul plusieurs systèmes de combat auprès de testeurs pour choisir le plus prenant.
 
@@ -11,6 +11,7 @@ Mis à jour le 20 novembre 2026.
 - Cahier des charges et contrat de données validés par Simon (`docs/`).
 - Règles de base : système D6, héros prédéfini (Habileté 7, Vie 12, 3 dés de chance), donjon de 8 salles plus un boss, sauvegarde à chaque salle.
 - Bestiaire : gobelin, squelette, araignée géante, loup-garou, le Murmureur (créature propre au jeu), et un démon en boss final.
+- Intrigue générale et prologue en cinq parties (`docs/intrigue.md`) : à Legia, un groupe de francs-tireurs enquête sur des pèlerins disparus et découvre un pacte avec un démon ; piégé dans les catacombes, un seul survit, le héros.
 
 ### Illustrations
 
@@ -67,3 +68,4 @@ Mis à jour le 20 novembre 2026.
 - **Lecteur d'écran :** que fait le jeu si VoiceOver ou TalkBack est déjà actif ?
 - **Dés de chance :** réussite à 4 ou plus, ou à 5 ou plus ? Les deux sont testés.
 - **Ton des monstres :** sombre seulement, ou une touche d'humour ?
+- **Intrigue :** nom du démon, nom et rôle du frère hospitalier, sort des compagnons, fin de l'aventure (voir `docs/intrigue.md`).
