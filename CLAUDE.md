@@ -24,6 +24,7 @@ Jeu de rôle « porte, monstre, trésor » pour un public aveugle ou malvoyant, 
 |---|---|
 | Conception : cahier des charges, contrat de données | `docs/` |
 | Page d'essai des combats (texte seul, systèmes A à G) | `essais/combats.html`, publiée sur https://simonlavenne-bibli.github.io/jeu-de-role-accessible/essais/combats.html |
+| Essai des dés en 3D (animation et son) | `essais/des.html` |
 | Script de collecte des résultats (Google Apps Script) | `outils/collecte-resultats.gs`, installation dans `docs/collecte-resultats.md` |
 | Premier prototype avec images, sons et voix | branche `illustrations-essai`, `prototype/premier-combat.html` |
 | Illustrations au format du jeu, scripts d'images et de voix | branche `illustrations-essai` : `assets/images/`, `outils/` |
