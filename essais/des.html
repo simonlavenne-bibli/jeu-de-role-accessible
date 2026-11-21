@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essai des dés — Jeu de rôle accessible</title>
+<style>
+  :root { --fond: #000; --encre: #fff; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 1rem;
+    background: var(--fond);
+    color: var(--encre);
+    font-family: Verdana, "DejaVu Sans", system-ui, sans-serif;
+    font-size: 1.2rem;
+    line-height: 1.5;
+    max-width: 40rem;
+    margin-inline: auto;
+  }
+  h1 { font-size: 1.6rem; margin: 0 0 0.4rem; }
+  .discret { font-size: 1rem; margin: 0 0 0.8rem; }
+  a { color: var(--encre); }
+  button {
+    font: inherit;
+    font-weight: bold;
+    color: var(--encre);
+    background: var(--fond);
+    border: 4px solid var(--encre);
+    border-radius: 0;
+    min-height: 3.5rem;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+  }
+  button:focus { outline: 4px dashed var(--encre); outline-offset: 3px; }
+  button:disabled { opacity: 0.5; }
+  .boutons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.8rem 0; }
+
+  #resultat { font-size: 1.5rem; font-weight: bold; min-height: 2.4rem; margin: 0.8rem 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Essai des dés</h1>
+  <p class="discret">Lance les dés pour voir et entendre l'animation. Sur iPhone, coupe le mode silencieux pour avoir le son.</p>
+
+  <div id="tapis" aria-hidden="true"></div>
+
+  <p id="resultat" role="status" aria-live="polite"></p>
+
+  <div class="boutons">
+    <button type="button" data-nombre="1">Lancer 1 dé</button>
+    <button type="button" data-nombre="2">Lancer 2 dés</button>
+    <button type="button" data-nombre="3">Lancer 3 dés</button>
+    <button type="button" data-nombre="6">Lancer 6 dés</button>
+  </div>
+
+  <p class="discret"><a href="combats.html">Retour à l'essai des combats</a></p>
+</main>
+
+<script src="des3d.js"></script>
+<script>
+(function () {
+  'use strict';
+  var tapis = document.getElementById('tapis');
+  var zoneResultat = document.getElementById('resultat');
+  var boutons = document.querySelectorAll('[data-nombre]');
+
+  function de6() { return 1 + Math.floor(Math.random() * 6); }
+
+  function lancer(nombre) {
+    var valeurs = [];
+    for (var i = 0; i < nombre; i += 1) { valeurs.push(de6()); }
+    zoneResultat.textContent = '';
+    boutons.forEach(function (b) { b.disabled = true; });
+    Des3D.lancer(tapis, valeurs).then(function () {
+      var liste = valeurs.join(', ').replace(/, (\d)$/, ' et $1');
+      var total = valeurs.reduce(function (a, b) { return a + b; }, 0);
+      zoneResultat.textContent = nombre === 1 ? 'Tu as fait ' + liste + '.' : 'Tu as fait ' + liste + '. Total : ' + total + '.';
+      boutons.forEach(function (b) { b.disabled = false; });
+    });
+  }
+
+  boutons.forEach(function (b) {
+    b.addEventListener('click', function () { lancer(parseInt(b.getAttribute('data-nombre'), 10)); });
+  });
+})();
+</script>
+</body>
+</html>
