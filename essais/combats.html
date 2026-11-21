@@ -276,7 +276,8 @@
   <h2>Fins de combat et ambiance</h2>
   <div class="boutons">
     <button type="button" data-son="victoire">Victoire</button>
-    <button type="button" data-son="mort">Mort du héros</button>
+    <button type="button" data-son="victoire-monstre">Le monstre gagne le combat</button>
+    <button type="button" data-son="mort">Mort du héros (glas)</button>
     <button type="button" data-son="fuite">Fuite</button>
     <button type="button" id="essai-ambiance">Ambiance de fond (10 secondes)</button>
   </div>
@@ -451,7 +452,7 @@
   });
 
   // Un bruitage précis, joué quand le prochain écran apparaît.
-  function bruiter(nom, monstre) { sonsEnAttente.push([nom, monstre]); }
+  function bruiter(nom, monstre, options) { sonsEnAttente.push([nom, monstre, options]); }
 
   function sonsPrets() { if (window.Sons) { Sons.preparer(); } }
   function ambiance(allumer) { if (window.Sons) { Sons.ambiance(allumer); } }
@@ -479,7 +480,7 @@
     var apres = instantane();
     partie.dernierInstantane = apres;
     if (file.length) {
-      file.forEach(function (s) { Sons.jouer(s[0], s[1]); });
+      file.forEach(function (s) { Sons.jouer(s[0], s[1], s[2]); });
       return;
     }
     if (!avant || !partie.enCombat) { return; }
@@ -489,7 +490,8 @@
     if (monstreBlesse) {
       Sons.jouer(monstreMort ? 'mort' : 'douleur', cle);
       // Touché mais debout : il enrage, d'autant plus qu'il lui reste peu de vie.
-      if (!monstreMort) { Sons.jouer('rage', cle, { delai: 0.6, fureur: fureurDuMonstre() }); }
+      // (Il commence quand le cri de douleur se termine.)
+      if (!monstreMort) { Sons.jouer('rage', cle, { delai: Sons.duree('douleur', cle) - 0.1, fureur: fureurDuMonstre() }); }
     }
     if (herosBlesse) { Sons.jouer('touche-heros'); }
     if (monstreBlesse || herosBlesse || !jets) { return; }
@@ -922,7 +924,8 @@
     partie.vie = 0;
     titre('Tu es mort');
     ambiance(false);
-    bruiter('mort');
+    bruiter('victoire-monstre');
+    bruiter('mort', null, { delai: window.Sons ? Sons.duree('victoire-monstre') - 0.5 : 0 });
     raconter(['Le noir se referme sur toi.']);
     terminer('mort');
   }

@@ -4,6 +4,7 @@ Une ligne par décision prise par Simon, la plus récente en haut. Ne pas reveni
 
 | Date | Décision |
 |---|---|
+| 21/11/2026 | Sons enregistrés de Simon (libres de droits) pour le cri du monstre touché, le cri de douleur du héros et le cri de victoire du monstre ; une hauteur par monstre ; les cris de rage sont gardés, après le cri enregistré. |
 | 21/11/2026 | L'histoire est accessible depuis le menu principal de l'essai, une partie par écran, avec une musique sombre tant qu'on la lit. |
 | 21/11/2026 | Un monstre touché mais encore debout pousse un cri de rage après son cri de douleur, plus furieux quand il lui reste peu de vie. |
 | 21/11/2026 | Bruitages du combat et ambiance de fond, rétro et fabriqués par le programme ; des enregistrements pourront les remplacer plus tard. Dans le système C, l'indice sonore reste prioritaire : l'ambiance baisse pendant qu'il joue. |

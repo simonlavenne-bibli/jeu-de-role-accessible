@@ -23,6 +23,52 @@
 
   function entre(a, b) { return a + Math.random() * (b - a); }
 
+  // ---------------------------------------------------------------------
+  // SONS ENREGISTRÉS (fournis par Simon, libres de droits) : essais/sons/
+  // ---------------------------------------------------------------------
+  // S'ils ne sont pas encore chargés (ou introuvables), les sons fabriqués prennent le relais.
+  var FICHIERS = {
+    'cri-monstre': 'sons/cri-monstre.mp3',
+    'cri-heros': 'sons/cri-heros.mp3',
+    'victoire-monstre': 'sons/victoire-monstre.mp3'
+  };
+  var enregistrements = {};
+  var chargementLance = false;
+
+  function chargerEnregistrements() {
+    if (chargementLance || !window.fetch) { return; }
+    chargementLance = true;
+    Object.keys(FICHIERS).forEach(function (nom) {
+      fetch(FICHIERS[nom])
+        .then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.arrayBuffer(); })
+        .then(function (donnees) {
+          // Forme à rappels : acceptée aussi par les anciens Safari.
+          audio.decodeAudioData(donnees, function (tampon) { enregistrements[nom] = tampon; }, function () { /* son fabriqué à la place */ });
+        })
+        .catch(function () { /* hors ligne ou fichier absent : son fabriqué à la place */ });
+    });
+  }
+
+  // Joue un enregistrement. vitesse < 1 : plus grave et plus lent ; > 1 : plus aigu et plus sec.
+  // Rend sa durée en secondes, ou 0 s'il n'est pas disponible.
+  function enregistrement(nom, t, o) {
+    var tampon = enregistrements[nom];
+    if (!tampon) { return 0; }
+    o = o || {};
+    var source = audio.createBufferSource();
+    source.buffer = tampon;
+    source.playbackRate.value = o.vitesse || 1;
+    var g = audio.createGain();
+    g.gain.value = o.volume || 0.9;
+    source.connect(g);
+    sortie(g, o.pan);
+    source.start(t);
+    return tampon.duration / (o.vitesse || 1);
+  }
+
+  // Hauteur du cri enregistré selon le monstre.
+  var VITESSE_CRI = { squelette: 1.25, 'loup-garou': 1, demon: 0.75 };
+
   function preparer() {
     if (!audio) {
       var Contexte = window.AudioContext || window.webkitAudioContext;
@@ -37,6 +83,7 @@
       ambianceGain = audio.createGain();
       ambianceGain.gain.value = 0;
       ambianceGain.connect(audio.destination);
+      chargerEnregistrements();
     }
     if (audio.state === 'suspended') { audio.resume(); }
     return true;
@@ -156,16 +203,19 @@
     // --- Un monstre est touché : le coup de lame, puis son cri ---
     'douleur-squelette': function (t) {
       BRUITAGES.lame(t);
+      if (enregistrement('cri-monstre', t + 0.08, { vitesse: VITESSE_CRI.squelette })) { return; }
       souffle(t + 0.08, { type: 'highpass', f1: 1500, f2: 900, duree: 0.08, volume: 0.4 });
       for (var i = 0; i < 6; i += 1) { clic(t + 0.15 + i * 0.05, entre(2000, 3800), 0.3, entre(-0.5, 0.5)); }
     },
     'douleur-loup-garou': function (t) {
       BRUITAGES.lame(t);
+      if (enregistrement('cri-monstre', t + 0.08, { vitesse: VITESSE_CRI['loup-garou'] })) { return; }
       note(t + 0.1, { type: 'sawtooth', f1: 700, f2: 1100, duree: 0.12, volume: 0.2, filtre: 2000 });
       note(t + 0.22, { type: 'sawtooth', f1: 1100, f2: 450, duree: 0.25, volume: 0.2, filtre: 1800 });
     },
     'douleur-demon': function (t) {
       BRUITAGES.lame(t);
+      if (enregistrement('cri-monstre', t + 0.08, { vitesse: VITESSE_CRI.demon })) { return; }
       note(t + 0.1, { type: 'sawtooth', f1: 130, f2: 75, duree: 0.5, volume: 0.3, attaque: 0.02, filtre: 700, vibrato: [12, 8] });
       souffle(t + 0.1, { type: 'lowpass', f1: 600, f2: 200, duree: 0.4, volume: 0.15 });
     },
@@ -245,6 +295,7 @@
     // --- Le héros ---
     'touche-heros': function (t) {
       sourd(t, 0.45);
+      if (enregistrement('cri-heros', t + 0.05)) { return; }
       note(t + 0.06, { type: 'sawtooth', f1: 170, f2: 110, duree: 0.22, volume: 0.18, attaque: 0.02, filtre: 900 });
     },
 
@@ -280,6 +331,11 @@
         note(t + i * 0.12, { type: 'square', f1: f, f2: f, duree: i === 3 ? 0.7 : 0.14, volume: 0.13, filtre: 2500 });
       });
       note(t + 0.36, { type: 'square', f1: 659, f2: 659, duree: 0.7, volume: 0.08, filtre: 2500 });
+    },
+    // Le monstre a gagné : son cri de victoire (enregistré), avant le glas.
+    'victoire-monstre': function (t) {
+      if (enregistrement('victoire-monstre', t, { volume: 1 })) { return; }
+      note(t, { type: 'sawtooth', f1: 110, f2: 160, duree: 1.2, volume: 0.3, attaque: 0.1, filtre: 900, vibrato: [8, 10] });
     },
     mort: function (t) {
       // Le glas : trois coups de cloche graves.
@@ -385,5 +441,16 @@
     if (!actif) { ambiance(false); }
   }
 
-  window.Sons = { preparer: preparer, jouer: jouer, ambiance: ambiance, attenuer: attenuer, activer: activer };
+  // Durée approximative d'un bruitage, en secondes, pour enchaîner le suivant.
+  function duree(nom, monstre) {
+    if (nom === 'douleur' && enregistrements['cri-monstre']) {
+      return 0.08 + enregistrements['cri-monstre'].duration / (VITESSE_CRI[monstre] || 1);
+    }
+    if (nom === 'victoire-monstre' && enregistrements['victoire-monstre']) {
+      return enregistrements['victoire-monstre'].duration;
+    }
+    return { douleur: 0.6, 'victoire-monstre': 1.3 }[nom] || 0;
+  }
+
+  window.Sons = { preparer: preparer, jouer: jouer, duree: duree, ambiance: ambiance, attenuer: attenuer, activer: activer };
 })();
