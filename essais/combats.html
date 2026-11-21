@@ -221,6 +221,8 @@
   <input id="testeur" type="text" maxlength="40" autocomplete="nickname" class="champ">
   <label class="case"><input type="checkbox" id="reglage-illustrations" checked> Afficher les illustrations des monstres</label>
   <label class="case"><input type="checkbox" id="reglage-des" checked> Animation et bruit des dés</label>
+  <label class="case"><input type="checkbox" id="reglage-sons" checked> Bruitages et ambiance</label>
+  <div class="boutons"><button type="button" data-aller="ecouter-sons">Écouter les bruitages</button></div>
   <fieldset>
     <legend>Dé de chance : réussite à partir de</legend>
     <label><input type="radio" name="seuil-chance" value="4" checked> 4 ou plus</label>
@@ -230,8 +232,43 @@
   <button type="button" class="retour" data-aller="menu">Retour</button>
 </section>
 
+<!-- ======================= ÉCOUTER LES BRUITAGES ======================= -->
+<section id="ecouter-sons" class="ecran" hidden aria-labelledby="titre-ecouter">
+  <h1 id="titre-ecouter" tabindex="-1">Écouter les bruitages</h1>
+  <p class="discret">Sur iPhone, coupe le mode silencieux.</p>
+  <h2>Les monstres</h2>
+  <div class="boutons">
+    <button type="button" data-son="apparition:squelette">Arrivée du squelette</button>
+    <button type="button" data-son="douleur:squelette">Squelette touché</button>
+    <button type="button" data-son="mort:squelette">Mort du squelette</button>
+    <button type="button" data-son="apparition:loup-garou">Arrivée du loup-garou</button>
+    <button type="button" data-son="douleur:loup-garou">Loup-garou touché</button>
+    <button type="button" data-son="mort:loup-garou">Mort du loup-garou</button>
+    <button type="button" data-son="apparition:demon">Arrivée du démon</button>
+    <button type="button" data-son="douleur:demon">Démon touché</button>
+    <button type="button" data-son="mort:demon">Mort du démon</button>
+  </div>
+  <h2>Le combat</h2>
+  <div class="boutons">
+    <button type="button" data-son="touche-heros">Tu es touché</button>
+    <button type="button" data-son="parade">Coup paré</button>
+    <button type="button" data-son="rate">Coup dans le vide</button>
+    <button type="button" data-son="chance-reussie">Dé de chance réussi</button>
+    <button type="button" data-son="chance-ratee">Dé de chance raté</button>
+  </div>
+  <h2>Fins de combat et ambiance</h2>
+  <div class="boutons">
+    <button type="button" data-son="victoire">Victoire</button>
+    <button type="button" data-son="mort">Mort du héros</button>
+    <button type="button" data-son="fuite">Fuite</button>
+    <button type="button" id="essai-ambiance">Ambiance de fond (10 secondes)</button>
+  </div>
+  <button type="button" class="retour" data-aller="reglages">Retour</button>
+</section>
+
 </main>
 
+<script src="sons.js"></script>
 <script src="des3d.js"></script>
 <script>
 (function () {
@@ -356,6 +393,7 @@
   document.querySelectorAll('[data-monstre]').forEach(function (b) {
     b.addEventListener('click', function () {
       choix.monstre = b.getAttribute('data-monstre');
+      sonsPrets();
       commencer();
     });
   });
@@ -375,9 +413,81 @@
     });
     window.scrollTo(0, 0);
     zoneRecit.focus();
-    // Pendant que les dés roulent, les compteurs gardent leurs anciennes valeurs.
-    if (!montrerDes()) { afficherCompteurs(); }
+    // Pendant que les dés roulent, les compteurs gardent leurs anciennes valeurs,
+    // et les bruitages attendent que les dés s'arrêtent.
+    var jets = desEnAttente.length > 0;
+    if (!montrerDes()) { afficherCompteurs(); bruitages(jets); }
   }
+
+  // =====================================================================
+  // BRUITAGES ET AMBIANCE (module sons.js)
+  // =====================================================================
+  var caseSons = document.getElementById('reglage-sons');
+  var sonsEnAttente = [];
+  try { if (localStorage.getItem('sons') === 'non') { caseSons.checked = false; } } catch (e) { /* stockage indisponible */ }
+  if (window.Sons) { Sons.activer(caseSons.checked); }
+  caseSons.addEventListener('change', function () {
+    try { localStorage.setItem('sons', caseSons.checked ? 'oui' : 'non'); } catch (e) { /* stockage indisponible */ }
+    if (window.Sons) { Sons.activer(caseSons.checked); }
+  });
+
+  // Un bruitage précis, joué quand le prochain écran apparaît.
+  function bruiter(nom, monstre) { sonsEnAttente.push([nom, monstre]); }
+
+  function sonsPrets() { if (window.Sons) { Sons.preparer(); } }
+  function ambiance(allumer) { if (window.Sons) { Sons.ambiance(allumer); } }
+
+  // Ce que le jeu compare d'un écran à l'autre pour choisir les bruitages.
+  function instantane() {
+    return { monstre: partie.vieMonstre, heros: partie.vie, etatMonstre: partie.niveauMonstre || 0, etatHeros: partie.niveauHeros || 0 };
+  }
+
+  // Joue les bruitages de l'écran qui vient d'apparaître.
+  // jets : des dés ont été lancés pour arriver à cet écran.
+  function bruitages(jets) {
+    if (!partie || !window.Sons) { sonsEnAttente = []; return; }
+    var cle = partie.cleMonstre;
+    var file = sonsEnAttente;
+    sonsEnAttente = [];
+    var avant = partie.dernierInstantane;
+    var apres = instantane();
+    partie.dernierInstantane = apres;
+    if (file.length) {
+      file.forEach(function (s) { Sons.jouer(s[0], s[1]); });
+      return;
+    }
+    if (!avant || !partie.enCombat) { return; }
+    var monstreBlesse = apres.monstre < avant.monstre || apres.etatMonstre > avant.etatMonstre;
+    var herosBlesse = apres.heros < avant.heros || apres.etatHeros > avant.etatHeros;
+    var monstreMort = partie.vieMonstre <= 0 || (partie.niveauMonstre || 0) >= 4;
+    if (monstreBlesse) { Sons.jouer(monstreMort ? 'mort' : 'douleur', cle); }
+    if (herosBlesse) { Sons.jouer('touche-heros'); }
+    if (monstreBlesse || herosBlesse || !jets) { return; }
+    // Personne n'est blessé : coup paré, ou coup dans le vide.
+    // (« Il te touche » / « Tu touches » sans blessure : les dégâts viennent à l'écran suivant.)
+    var texte = zoneRecit.textContent;
+    if (/te touche|tu touches\./i.test(texte)) { return; }
+    if (/tu pares|pare\.|bloquent tout|bloque tout|il arrête le coup|ne passes pas sa garde/i.test(texte)) { Sons.jouer('parade'); }
+    else if (/raté|te manque|aucun de tes coups|se croisent|ne l'entame|sans broncher/i.test(texte)) { Sons.jouer('rate'); }
+  }
+
+  document.querySelectorAll('[data-son]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (!window.Sons) { return; }
+      var morceaux = b.getAttribute('data-son').split(':');
+      Sons.preparer();
+      Sons.activer(true);
+      Sons.jouer(morceaux[0], morceaux[1]);
+      Sons.activer(caseSons.checked);
+    });
+  });
+  document.getElementById('essai-ambiance').addEventListener('click', function () {
+    if (!window.Sons) { return; }
+    Sons.preparer();
+    Sons.activer(true);
+    Sons.ambiance(true);
+    setTimeout(function () { Sons.ambiance(false); Sons.activer(caseSons.checked); }, 10000);
+  });
 
   // Dés en 3D : s'il y a eu des jets depuis le dernier choix, ils roulent d'abord ;
   // le récit et les boutons n'apparaissent qu'une fois les dés arrêtés.
@@ -397,6 +507,7 @@
     Des3D.lancer(tapis, valeurs).then(function () {
       ecranCombat.classList.remove('roule');
       afficherCompteurs();
+      bruitages(true);
       zoneRecit.focus();
     });
     return true;
@@ -449,7 +560,7 @@
       var b = document.createElement('button');
       b.type = 'button';
       b.textContent = (i + 1) + '. ' + c[0];
-      b.addEventListener('click', function () { desEnAttente = []; c[1](); });
+      b.addEventListener('click', function () { desEnAttente = []; sonsPrets(); c[1](); });
       zoneChoix.appendChild(b);
     });
   }
@@ -517,7 +628,10 @@
   function entreeEnScene() {
     var moteur = MOTEURS[partie.systeme];
     partie.enCombat = true;
+    partie.dernierInstantane = instantane();
     titre('Ton adversaire');
+    ambiance(true);
+    bruiter('apparition', partie.cleMonstre);
     raconter([(moteur && moteur.entree && moteur.entree()) || partie.monstre.entree]);
     proposer([['Commencer le combat', tourSuivant]]);
   }
@@ -624,8 +738,10 @@
         var lu = 'Dé de chance : ' + resultat + '.';
         if (resultat >= partie.seuilChance) {
           partie.decisions.chancesReussies += 1;
+          bruiter('chance-reussie');
           ensuite([lu, 'La chance te sourit : le coup te frôle sans te toucher.']);
         } else {
+          bruiter('chance-ratee');
           proposerChance(degats, [lu, 'Raté.'], ensuite);
         }
       }],
@@ -640,6 +756,8 @@
     partie.decisions.fuites += 1;
     var lu = 'Tu tentes de fuir : ' + resultat + '. Il fallait ' + r.fuite + ' ou plus.';
     if (resultat >= r.fuite) {
+      bruiter('fuite');
+      ambiance(false);
       etape([lu, 'Tu recules d\'un bond et claques la porte derrière toi.'], 'Suite', function () {
         titre('Tu as fui');
         raconter(['Tu as échappé à ' + partie.monstre.nom + '.']);
@@ -659,6 +777,8 @@
     var m = MOTEURS[partie.systeme];
     etape(phrases.concat([(m && m.mort && m.mort()) || partie.monstre.mort]), 'Suite', function () {
       titre('Victoire !');
+      ambiance(false);
+      bruiter('victoire');
       raconter(['Tu as vaincu ' + partie.monstre.nom + '.']);
       terminer('victoire');
     });
@@ -667,6 +787,8 @@
   function mourir() {
     partie.vie = 0;
     titre('Tu es mort');
+    ambiance(false);
+    bruiter('mort');
     raconter(['Le noir se referme sur toi.']);
     terminer('mort');
   }
@@ -1001,6 +1123,7 @@
 
   function jouerSigne(cleMonstre, intention, v) {
     if (!preparerAudio()) { return; }
+    if (window.Sons) { Sons.attenuer(2500); }
     var voix = VOIX[cleMonstre];
     var f = voix.base * v.h;
     var t = audio.currentTime + 0.05;
@@ -1634,6 +1757,7 @@
   }
 
   function quitterCombat(ecran) {
+    ambiance(false);
     partie = null;
     montrer(ecran);
   }
