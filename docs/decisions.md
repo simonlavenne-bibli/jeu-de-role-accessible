@@ -4,6 +4,7 @@ Une ligne par décision prise par Simon, la plus récente en haut. Ne pas reveni
 
 | Date | Décision |
 |---|---|
+| 21/11/2026 | Un monstre touché mais encore debout pousse un cri de rage après son cri de douleur, plus furieux quand il lui reste peu de vie. |
 | 21/11/2026 | Bruitages du combat et ambiance de fond, rétro et fabriqués par le programme ; des enregistrements pourront les remplacer plus tard. Dans le système C, l'indice sonore reste prioritaire : l'ambiance baisse pendant qu'il joue. |
 | 21/11/2026 | Dés en 3D validés et ajoutés à l'essai des combats : chaque jet du héros et du monstre roule à l'écran avec son bruit. |
 | 21/11/2026 | Dés en 3D : animation de 1,5 seconde, bruit de dés fabriqué par le programme (un enregistrement réel pourra le remplacer plus tard). Essayé d'abord sur une page à part. |
