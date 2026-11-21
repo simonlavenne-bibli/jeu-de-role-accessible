@@ -58,6 +58,9 @@
   #illustration.bandeau { height: 9rem; object-fit: cover; object-position: center 30%; }
   #illustration[hidden] { display: none; }
   .case { display: block; margin: 0.8rem 0; font-weight: bold; }
+  /* Dés en 3D pendant le combat : le récit et les choix attendent qu'ils s'arrêtent. */
+  #tapis.tapis-des { height: 11rem; margin-bottom: 0.6rem; }
+  #combat.roule #recit, #combat.roule #des, #combat.roule #choix { visibility: hidden; }
   #titre-combat { margin-top: 0.2rem; }
   #recit { font-size: 1.35rem; }
   #recit { min-height: 6rem; margin-bottom: 0.8rem; }
@@ -143,6 +146,8 @@
   <img id="illustration" alt="" aria-hidden="true" hidden>
   <p id="sous-titre" class="discret"></p>
   <h1 id="titre-combat">Règles</h1>
+  <!-- Les dés qui roulent : décoratif, le résultat est toujours écrit dans le récit. -->
+  <div id="tapis" aria-hidden="true" hidden></div>
   <div id="recit" tabindex="-1"></div>
   <div id="des" hidden></div>
   <div id="choix"></div>
@@ -215,6 +220,7 @@
   <label for="testeur"><strong>Ton prénom ou pseudo</strong> (facultatif)</label>
   <input id="testeur" type="text" maxlength="40" autocomplete="nickname" class="champ">
   <label class="case"><input type="checkbox" id="reglage-illustrations" checked> Afficher les illustrations des monstres</label>
+  <label class="case"><input type="checkbox" id="reglage-des" checked> Animation et bruit des dés</label>
   <fieldset>
     <legend>Dé de chance : réussite à partir de</legend>
     <label><input type="radio" name="seuil-chance" value="4" checked> 4 ou plus</label>
@@ -226,6 +232,7 @@
 
 </main>
 
+<script src="des3d.js"></script>
 <script>
 (function () {
   'use strict';
@@ -294,7 +301,13 @@
   // =====================================================================
   // OUTILS
   // =====================================================================
-  function de() { return 1 + Math.floor(Math.random() * 6); }
+  // Chaque dé tiré est gardé jusqu'au prochain écran, pour le faire rouler à l'écran.
+  var desEnAttente = [];
+  function de() {
+    var valeur = 1 + Math.floor(Math.random() * 6);
+    desEnAttente.push(valeur);
+    return valeur;
+  }
   function au(liste) { return liste[Math.floor(Math.random() * liste.length)]; }
   function pv(n) { return n + (n > 1 ? ' points de vie' : ' point de vie'); }
   function pluriel(n, un, plusieurs) { return n + ' ' + (n > 1 ? plusieurs : un); }
@@ -360,9 +373,33 @@
       zoneRecit.appendChild(p);
       partie.trace.push(texte);
     });
-    afficherCompteurs();
     window.scrollTo(0, 0);
     zoneRecit.focus();
+    // Pendant que les dés roulent, les compteurs gardent leurs anciennes valeurs.
+    if (!montrerDes()) { afficherCompteurs(); }
+  }
+
+  // Dés en 3D : s'il y a eu des jets depuis le dernier choix, ils roulent d'abord ;
+  // le récit et les boutons n'apparaissent qu'une fois les dés arrêtés.
+  var tapis = document.getElementById('tapis');
+  var caseDes = document.getElementById('reglage-des');
+  try { if (localStorage.getItem('des') === 'non') { caseDes.checked = false; } } catch (e) { /* stockage indisponible */ }
+  caseDes.addEventListener('change', function () {
+    try { localStorage.setItem('des', caseDes.checked ? 'oui' : 'non'); } catch (e) { /* stockage indisponible */ }
+  });
+
+  function montrerDes() {
+    var valeurs = desEnAttente;
+    desEnAttente = [];
+    if (!valeurs.length || !caseDes.checked || !window.Des3D || !partie || !partie.enCombat) { tapis.hidden = true; return false; }
+    tapis.hidden = false;
+    ecranCombat.classList.add('roule');
+    Des3D.lancer(tapis, valeurs).then(function () {
+      ecranCombat.classList.remove('roule');
+      afficherCompteurs();
+      zoneRecit.focus();
+    });
+    return true;
   }
 
   // Compteurs : le monstre en haut à gauche, le héros en haut à droite.
@@ -412,13 +449,13 @@
       var b = document.createElement('button');
       b.type = 'button';
       b.textContent = (i + 1) + '. ' + c[0];
-      b.addEventListener('click', function () { c[1](); });
+      b.addEventListener('click', function () { desEnAttente = []; c[1](); });
       zoneChoix.appendChild(b);
     });
   }
 
   document.addEventListener('keydown', function (e) {
-    if (ecranCombat.hidden) { return; }
+    if (ecranCombat.hidden || ecranCombat.classList.contains('roule')) { return; }
     var n = parseInt(e.key, 10);
     if (n >= 1 && n <= 9) {
       var boutons = zoneChoix.querySelectorAll('button');
@@ -432,6 +469,7 @@
   var NOMS_SYSTEMES = { A: 'A, relance risquée', B: 'B, garder et relancer', C: 'C, écouter le monstre' };
 
   function commencer() {
+    desEnAttente = [];
     var systeme = choix.systeme;
     var cle = choix.monstre;
     var monstre = MONSTRES[cle];
