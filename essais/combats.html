@@ -309,7 +309,7 @@
         proteger: ['Il se replie derrière son bouclier fendu.', 'Il recule d\'un pas, le bouclier levé.'],
         tourner: ['Il glisse sur le côté, la pointe de l\'épée basse.', 'Sa tête pivote lentement, il cherche une faille.']
       },
-      entree: 'Au fond de la salle, un squelette se redresse dans un cliquetis sec. Il lève une épée ébréchée.',
+      entree: 'Au fond de la salle, un squelette se redresse dans un cliquetis sec. Il lève une épée ébréchée et son bouclier rond.',
       touche: ['Ta lame fait voler une côte.', 'Tu brises une vertèbre.', 'Ton coup fend son bouclier.'],
       frappe: ['Son épée s\'abat sur ton épaule.', 'La lame rouillée t\'entaille le bras.', 'Il te frappe au flanc.'],
       mort: 'Ses os s\'effondrent en tas sur les dalles.'
@@ -337,9 +337,9 @@
       signes: {
         bondir: ['Ses ailes se déploient d\'un coup.', 'Il plie les jambes et ses ailes battent une fois.'],
         proteger: ['Il croise les bras devant sa poitrine, les écailles hérissées.', 'Il replie ses ailes autour de lui comme un manteau.'],
-        tourner: ['Sa queue fouette l\'air, il te jauge.', 'Il fait le tour du trône à pas lents.']
+        tourner: ['Sa queue fouette l\'air, il te jauge.', 'Il tourne entre les colonnes à pas lents.']
       },
-      entree: 'La chaleur devient insoutenable. Un démon cornu déploie ses ailes au-dessus d\'un trône brisé.',
+      entree: 'La chaleur devient insoutenable. Entre les colonnes, à la lueur des braseros, un démon cornu déploie ses ailes et tend vers toi ses griffes.',
       touche: ['Ta lame entaille son aile.', 'Tu frappes sous la cuirasse d\'écailles.', 'Ton coup fait jaillir une gerbe de braises.'],
       frappe: ['Son poing de pierre t\'écrase l\'épaule.', 'Sa queue te fouette les jambes.', 'Ses griffes brûlantes te lacèrent.'],
       mort: 'Le démon s\'effondre et se dissout en cendres.'
@@ -1693,7 +1693,9 @@
       partie.avantageMonstre = false;
     },
     entree: function () {
-      return partie.bande ? 'Au fond de la salle, ' + partie.bande + ' squelettes se redressent dans un cliquetis sec et lèvent leurs épées ébréchées.' : null;
+      // L'illustration ne montre que le premier : les autres attendent dans l'ombre.
+      return partie.bande ? 'Au fond de la salle, un squelette se redresse dans un cliquetis sec et lève son épée ébréchée. Dans l\'ombre derrière lui, ' +
+        (partie.bande - 1) + ' autres attendent leur tour. Ils sont ' + partie.bande + ' en tout.' : null;
     },
     mort: function () { return partie.bande ? 'Le dernier squelette s\'effondre en tas sur les dalles.' : null; },
     regles: function () {
