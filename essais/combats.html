@@ -12,6 +12,15 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="apple-touch-icon" href="icones/icone-apple-180.png">
 <script>
+  // Panneau de diagnostic : les erreurs sont notées dès le chargement, pour les retrouver sur iPhone.
+  window.__erreurs = [];
+  window.addEventListener('error', function (e) {
+    window.__erreurs.push(new Date().toLocaleTimeString('fr-BE') + ' · ' + (e.message || 'fichier introuvable : ' + (e.target && (e.target.src || e.target.href))) +
+      (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) {
+    window.__erreurs.push(new Date().toLocaleTimeString('fr-BE') + ' · ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
+  });
   // Couleurs et taille du texte choisies dans Réglages : appliquées avant l'affichage, sans clignotement.
   try {
     document.documentElement.setAttribute('data-couleurs', localStorage.getItem('couleurs') || 'blanc-sur-noir');
@@ -300,7 +309,10 @@
     <label for="volume-indices">Indices du système C</label>
     <input type="range" id="volume-indices" data-couche="indices" min="0" max="100" step="10" class="volume">
   </fieldset>
-  <div class="boutons"><button type="button" data-aller="ecouter-sons">Écouter les bruitages</button></div>
+  <div class="boutons">
+    <button type="button" data-aller="ecouter-sons">Écouter les bruitages</button>
+    <button type="button" data-aller="diagnostic">Diagnostic, pour signaler un problème</button>
+  </div>
   <fieldset>
     <legend>Dé de chance : réussite à partir de</legend>
     <label><input type="radio" name="seuil-chance" value="4" checked> 4 ou plus</label>
@@ -309,6 +321,19 @@
   <p class="discret">Au clavier : les chiffres choisissent, les flèches parcourent les choix, Entrée valide. En combat, R répète le dernier message et P fait le point. O ouvre les réglages, depuis n'importe quel écran.</p>
   <p class="discret" id="mention-collecte">Les résultats de tes combats et ton avis sont envoyés à l'équipe de La Lumière pour comparer les systèmes. Rien d'autre n'est collecté, à part le prénom ou pseudo si tu l'indiques.</p>
   <button type="button" class="retour" id="quitter-reglages">Retour</button>
+</section>
+
+<!-- ============================ DIAGNOSTIC ============================ -->
+<section id="diagnostic" class="ecran" hidden aria-labelledby="titre-diagnostic">
+  <h1 id="titre-diagnostic" tabindex="-1">Diagnostic</h1>
+  <p class="discret">Si quelque chose ne marche pas, copie ce texte et envoie-le avec ta description du problème.</p>
+  <textarea id="texte-diagnostic" readonly aria-label="Diagnostic" class="champ" rows="12"></textarea>
+  <div class="deux">
+    <button type="button" id="copier-diagnostic">Copier le diagnostic</button>
+    <button type="button" id="son-diagnostic">Tester le son</button>
+  </div>
+  <p id="info-diagnostic" class="discret" role="status"></p>
+  <button type="button" class="retour" data-aller="reglages">Retour</button>
 </section>
 
 <!-- ======================= ÉCOUTER LES BRUITAGES ======================= -->

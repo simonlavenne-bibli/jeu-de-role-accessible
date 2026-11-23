@@ -30,6 +30,7 @@ var FICHIERS = [
   './combats/moteur/systemes/g.js',
   './combats/interface/principal.js',
   './combats/interface/combat.js',
+  './combats/interface/diagnostic.js',
   './combats/interface/collecte.js',
   './combats/interface/histoire.js',
   './combats/interface/reglages.js',

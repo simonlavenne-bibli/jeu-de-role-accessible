@@ -8,6 +8,7 @@ import { installerBruitages, installerAffichage } from './reglages.js';
 import { installerHistoire } from './histoire.js';
 import { installerCollecte } from './collecte.js';
 import { installerCombat } from './combat.js';
+import { installerDiagnostic, afficherDiagnostic } from './diagnostic.js';
 
 var collecte = installerCollecte();
 
@@ -23,12 +24,14 @@ function montrer(id) {
   if (id !== 'histoire' && window.Musique) { Musique.arreter(); }
   document.querySelectorAll('.ecran').forEach(function (e) { e.hidden = (e.id !== id); });
   if (id === 'resultats') { collecte.afficherBilan(); }
+  if (id === 'diagnostic') { afficherDiagnostic(); }
   var titre = document.querySelector('#' + id + ' h1');
   if (id !== 'combat' && titre) { titre.focus(); }
   window.scrollTo(0, 0);
 }
 
 installerAffichage();
+installerDiagnostic();
 installerBruitages();
 installerHistoire(montrer);
 var combats = installerCombat(montrer, collecte);
@@ -45,7 +48,7 @@ function ecranVisible() {
 
 function ouvrirReglages() {
   var actuel = ecranVisible();
-  if (actuel !== 'reglages' && actuel !== 'ecouter-sons') { ecranAvantReglages = actuel; }
+  if (actuel !== 'reglages' && actuel !== 'ecouter-sons' && actuel !== 'diagnostic') { ecranAvantReglages = actuel; }
   montrer('reglages');
 }
 
