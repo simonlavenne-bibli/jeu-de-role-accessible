@@ -1,6 +1,6 @@
 # État du projet
 
-Mis à jour le 21 novembre 2026.
+Mis à jour le 23 novembre 2026.
 
 **En une phrase :** la conception est posée, l'habillage (images, sons, voix) est en pause, et on teste en texte seul plusieurs systèmes de combat auprès de testeurs pour choisir le plus prenant.
 
@@ -51,6 +51,10 @@ Mis à jour le 21 novembre 2026.
 - Bruitages et ambiance dans l'essai des combats (21 novembre, `essais/sons.js`) : cri de chaque monstre à son arrivée, cri de douleur et choc de lame quand il est touché, puis cri de rage (trois variantes par monstre, plus furieux quand il lui reste peu de vie), son de mort, coup sourd quand le héros est touché, parade, coup dans le vide, dés de chance, fanfare, glas, fuite, et ambiance de fond (grondement, gouttes d'eau). Sons rétro fabriqués par le programme, joués quand les dés s'arrêtent. Réglage « Bruitages et ambiance » et sous-menu « Écouter les bruitages ».
 - Sons enregistrés fournis par Simon (21 novembre, libres de droits, `essais/sons/`) : cri du monstre touché (même enregistrement, plus aigu pour le squelette, plus grave pour le démon), cri de douleur du héros, cri de victoire du monstre quand le héros meurt (avant le glas). Le cri de rage suit le cri enregistré. Si un fichier manque, le son fabriqué prend le relais.
 - L'histoire dans l'essai des combats (21 novembre) : « 1. L'histoire » dans le menu principal, le prologue de `docs/intrigue.md` en cinq parties, une par écran, avec une musique sombre fabriquée par le programme (`essais/musique.js` : orgue grave en ré mineur, bourdon, cloche lointaine) qui joue tant qu'on lit. Case « Musique de l'histoire » dans Réglages.
+- Découpage de l'essai des combats en modules (23 novembre, branche `moteur-en-modules`, à valider par Simon) : le moteur des combats est séparé de l'affichage. Les règles des sept systèmes sont dans `essais/combats/moteur/` et ne touchent plus ni à la page ni au son ; l'affichage, les dés, les bruitages et la collecte sont dans `essais/combats/interface/`. Rien ne change pour le joueur : sur 168 combats rejoués avec le même hasard, l'ancienne et la nouvelle page affichent exactement les mêmes textes, choix et compteurs.
+  - Les bruitages « coup paré » et « coup dans le vide » sont signalés par le moteur, au lieu d'être devinés en cherchant des mots dans le récit. Deux oublis de l'ancienne page sont corrigés : en D, un 1 au dé fait maintenant entendre le coup dans le vide ; en B, « tes parades bloquent tout » et « aucun de tes coups ne porte » (après « M'arrêter et frapper ») font maintenant entendre leur bruitage.
+  - Hasard avec graine : `combats.html?graine=12` rejoue toujours le même combat, pour reproduire un cas signalé par un testeur.
+  - Tests sans navigateur (`npm test`) : chaque système contre chaque adversaire, des milliers de combats joués par un robot ; et une simulation d'équilibrage (`npm run simulation`).
 
 ## En cours
 

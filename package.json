@@ -1,0 +1,10 @@
+{
+  "name": "jeu-de-role-accessible",
+  "private": true,
+  "description": "Jeu de rôle accessible : aucun paquet à installer, Node suffit pour les tests.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "simulation": "node outils/simulation.js"
+  }
+}
