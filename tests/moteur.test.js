@@ -100,3 +100,35 @@ test('le moteur ne touche jamais à la page ni au son, et ne contient aucun text
     });
   });
 });
+
+test('fuite ratée : un dé de chance est proposé, et sa réussite fait fuir', function () {
+  var vus = { proposee: 0, reussie: 0, refusee: 0 };
+  LISTE_SYSTEMES.forEach(function (systeme) {
+    for (var graine = 1; graine <= 200; graine += 1) {
+      // Le robot fuit dès qu'il peut, puis tente sa chance une fois sur deux.
+      var r = jouer({
+        systeme: systeme, monstre: 'demon', graine: graine,
+        choisir: function (libelles, hasard) {
+          if (libelles[0] === 'Suivant') { return 1; }
+          var fuir = libelles.indexOf('Fuir');
+          if (fuir >= 0) { return fuir; }
+          if (libelles.includes('Rester et combattre')) { return hasard() < 0.5 ? 0 : 1; }
+          return 0;
+        }
+      });
+      r.ecrans.forEach(function (e, i) {
+        if (!e.messages.some(function (m) { return m.type === 'chance-fuite-proposee'; })) { return; }
+        vus.proposee += 1;
+        assert.ok(e.messages.some(function (m) { return m.type === 'fuite-ratee' || m.type === 'chance-ratee'; }), systeme);
+        var suite = r.ecrans[i + 1];
+        if (suite.messages.some(function (m) { return m.type === 'chance-fuite-reussie'; })) { vus.reussie += 1; }
+        if (suite.messages.some(function (m) { return m.type === 'chance-refusee'; })) { vus.refusee += 1; }
+      });
+      if (r.ecrans.some(function (e) { return e.messages.some(function (m) { return m.type === 'chance-fuite-reussie'; }); })) {
+        assert.equal(r.resultat.issue, 'fuite', systeme + ', graine ' + graine);
+      }
+      assert.ok(r.partie.chances >= 0);
+    }
+  });
+  assert.ok(vus.proposee > 100 && vus.reussie > 20 && vus.refusee > 20, JSON.stringify(vus));
+});

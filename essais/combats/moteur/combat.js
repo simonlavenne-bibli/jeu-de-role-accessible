@@ -156,17 +156,45 @@ export function creerCombat(options) {
     var resultat = de();
     partie.decisions.fuites += 1;
     var lu = msg('fuite-resultat', { de: resultat, seuil: r.fuite, reussie: resultat >= r.fuite });
-    if (resultat >= r.fuite) {
-      signaler('fuite');
-      ui.ambiance(false);
-      etape([lu, msg('fuite-reussie')], 'choix-suite', function () {
-        titre('titre-fuite');
-        raconter([msg('fuite-bilan')]);
-        terminer('fuite');
-      });
-      return;
-    }
-    moteur.fuiteRatee([lu, msg('fuite-ratee')]);
+    if (resultat >= r.fuite) { echapper([lu, msg('fuite-reussie')]); return; }
+    var barre = [lu, msg('fuite-ratee')];
+    if (partie.chances > 0) { proposerChanceFuite(barre); return; }
+    moteur.fuiteRatee(barre);
+  }
+
+  function echapper(messages) {
+    signaler('fuite');
+    ui.ambiance(false);
+    etape(messages, 'choix-suite', function () {
+      titre('titre-fuite');
+      raconter([msg('fuite-bilan')]);
+      terminer('fuite');
+    });
+  }
+
+  // Fuite ratée : un dé de chance peut te permettre d'échapper quand même
+  // (décision du 15 novembre : coup mortel, fuite ratée, piège).
+  // On peut enchaîner les dés tant qu'il en reste ; si on renonce, le monstre frappe sans riposte.
+  function proposerChanceFuite(messages) {
+    raconter(messages.concat([msg('chance-fuite-proposee', { desRestants: partie.chances, seuil: partie.seuilChance })]));
+    proposer([
+      [msg('choix-tenter-sa-chance'), function () {
+        var resultat = de();
+        partie.chances -= 1;
+        partie.decisions.chancesUtilisees += 1;
+        var lu = msg('chance-resultat', { de: resultat, desRestants: partie.chances, situation: 'fuite-ratee' });
+        if (resultat >= partie.seuilChance) {
+          partie.decisions.chancesReussies += 1;
+          signaler('chance-reussie');
+          echapper([lu, msg('chance-fuite-reussie')]);
+          return;
+        }
+        signaler('chance-ratee');
+        if (partie.chances > 0) { proposerChanceFuite([lu, msg('chance-ratee')]); return; }
+        moteur.fuiteRatee([lu, msg('chance-ratee'), msg('chance-epuisee')]);
+      }],
+      [msg('choix-rester'), function () { moteur.fuiteRatee([msg('chance-refusee')]); }]
+    ]);
   }
 
   function vaincre(messages) {

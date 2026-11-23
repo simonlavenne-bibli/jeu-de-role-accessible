@@ -168,17 +168,23 @@ var T = {
   'fuite-reussie': function () { return 'Tu recules d\'un bond et claques la porte derrière toi.'; },
   'fuite-bilan': function (d, p) { return 'Tu as échappé à ' + m(p).nom + '.'; },
   'fuite-ratee': function (d, p) { return m(p).Nom + ' te barre le passage.'; },
+  'chance-fuite-proposee': function (d, p) {
+    return 'Il te reste ' + pluriel(d.desRestants, 'dé de chance', 'dés de chance') + '. Sur ' + d.seuil + ' ou plus, tu lui échappes quand même.';
+  },
+  'chance-fuite-reussie': function (d, p) { return 'La chance te sourit : tu te glisses sous sa garde et claques la porte derrière toi.'; },
+  'chance-refusee': function (d, p) { return 'Tu restes face à ' + m(p).nom + '.'; },
+  'choix-rester': function () { return 'Rester et combattre'; },
   'monstre-vaincu': function (d, p) { return p.bande ? 'Le dernier squelette s\'effondre en tas sur les dalles.' : m(p).mort; },
   'victoire': function (d, p) { return 'Tu as vaincu ' + m(p).nom + '.'; },
   'heros-mort': function () { return 'Le noir se referme sur toi.'; },
 
   // --- Règles communes -------------------------------------------------
   'regle-chance': function (d, p) {
-    return 'Si un coup doit te tuer, tu peux lancer un dé de chance : sur ' + p.seuilChance +
-      ' ou plus, tu l\'évites. Si tu échoues, tu peux en lancer un autre, tant qu\'il t\'en reste.';
+    return 'Si un coup doit te tuer, ou si ta fuite échoue, tu peux lancer un dé de chance : sur ' + p.seuilChance +
+      ' ou plus, tu y échappes. Si tu échoues, tu peux en lancer un autre, tant qu\'il t\'en reste.';
   },
   'regle-fuite': function (d, p) {
-    return 'Fuir : tu lances un dé, il faut ' + p.regles.fuite + ' ou plus. Si tu échoues, ' + m(p).nom + ' frappe sans riposte.';
+    return 'Fuir : tu lances un dé, il faut ' + p.regles.fuite + ' ou plus. Si tu échoues et que tu ne tentes pas ta chance, ' + m(p).nom + ' frappe sans riposte.';
   },
 
   // --- Système A : relance risquée -------------------------------------
