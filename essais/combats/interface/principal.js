@@ -4,7 +4,7 @@
  * Relie les écrans du menu, les réglages, l'histoire, la collecte des résultats
  * et l'affichage du combat. Les règles du combat sont dans ../moteur/.
  */
-import { installerBruitages } from './reglages.js';
+import { installerBruitages, installerAffichage } from './reglages.js';
 import { installerHistoire } from './histoire.js';
 import { installerCollecte } from './collecte.js';
 import { installerCombat } from './combat.js';
@@ -21,6 +21,7 @@ function montrer(id) {
   window.scrollTo(0, 0);
 }
 
+installerAffichage();
 installerBruitages();
 installerHistoire(montrer);
 var combats = installerCombat(montrer, collecte);

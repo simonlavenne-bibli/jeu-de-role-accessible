@@ -4,8 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Essai des combats — texte seul</title>
+<script>
+  // Couleurs et taille du texte choisies dans Réglages : appliquées avant l'affichage, sans clignotement.
+  try {
+    document.documentElement.setAttribute('data-couleurs', localStorage.getItem('couleurs') || 'blanc-sur-noir');
+    document.documentElement.setAttribute('data-taille', localStorage.getItem('taille') || '100');
+  } catch (e) { /* stockage indisponible : réglages par défaut */ }
+</script>
 <style>
-  :root { --fond: #000; --encre: #fff; }
+  /* Quatre jeux de couleurs (décision du 15 novembre). --teinte : couleur des traits des illustrations. */
+  :root { --fond: #000; --encre: #fff; --teinte: #fff; }
+  :root[data-couleurs="noir-sur-blanc"] { --fond: #fff; --encre: #000; --teinte: #fff; }
+  :root[data-couleurs="jaune-sur-noir"] { --fond: #000; --encre: #ffeb3b; --teinte: #ffeb3b; }
+  :root[data-couleurs="orange-sur-noir"] { --fond: #000; --encre: #ff9f1a; --teinte: #ff9f1a; }
+  /* Taille du texte : tout est en rem, il suffit de changer la taille de base. */
+  :root[data-taille="125"] { font-size: 125%; }
+  :root[data-taille="150"] { font-size: 150%; }
+  :root[data-taille="175"] { font-size: 175%; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -39,7 +54,8 @@
   }
   button:focus { outline: 4px dashed var(--encre); outline-offset: 3px; }
   button:active { background: var(--encre); color: var(--fond); }
-  button[disabled] { opacity: 0.55; cursor: default; }
+  /* Désactivé : bordure en pointillés, texte toujours bien contrasté. */
+  button[disabled] { border-style: dashed; cursor: default; }
   .boutons { display: flex; flex-direction: column; gap: 0.6rem; margin: 1rem 0; }
   .retour { margin-top: 0.6rem; font-weight: normal; min-height: 3rem; }
   .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
@@ -55,9 +71,13 @@
   #compteurs.mots .valeur { font-size: 1.3rem; }
   #sous-titre { margin: 0; }
   /* Illustration : en grand à l'arrivée du monstre, en bandeau pendant le combat. */
-  #illustration { display: block; width: 100%; height: auto; border: 3px solid var(--encre); margin-bottom: 0.6rem; }
+  /* Traits clairs sur fond noir : « multiply » les teinte dans la couleur choisie ;
+     en noir sur blanc, l'image est inversée. */
+  #cadre-illustration { display: block; background: var(--teinte); border: 3px solid var(--encre); margin-bottom: 0.6rem; line-height: 0; isolation: isolate; }
+  #illustration { display: block; width: 100%; height: auto; mix-blend-mode: multiply; }
+  :root[data-couleurs="noir-sur-blanc"] #illustration { filter: invert(1); }
   #illustration.bandeau { height: 9rem; object-fit: cover; object-position: center 30%; }
-  #illustration[hidden] { display: none; }
+  #cadre-illustration[hidden] { display: none; }
   .case { display: block; margin: 0.8rem 0; font-weight: bold; }
   .recit-histoire p { font-size: 1.3rem; line-height: 1.6; margin: 0 0 1rem; }
   /* Dés en 3D pendant le combat : le récit et les choix attendent qu'ils s'arrêtent. */
@@ -159,7 +179,7 @@
     </div>
   </div>
   <!-- Illustration décorative : le récit dit déjà tout, le lecteur d'écran l'ignore. -->
-  <img id="illustration" alt="" aria-hidden="true" hidden>
+  <span id="cadre-illustration" hidden><img id="illustration" alt="" aria-hidden="true"></span>
   <p id="sous-titre" class="discret"></p>
   <h1 id="titre-combat">Règles</h1>
   <!-- Les dés qui roulent : décoratif, le résultat est toujours écrit dans le récit. -->
@@ -247,6 +267,21 @@
   <label class="case"><input type="checkbox" id="reglage-musique" checked> Musique de l'histoire</label>
   <label class="case"><input type="checkbox" id="reglage-des" checked> Animation et bruit des dés</label>
   <label class="case"><input type="checkbox" id="reglage-sons" checked> Bruitages et ambiance</label>
+  <label class="case" id="ligne-vibrations"><input type="checkbox" id="reglage-vibrations" checked> Vibrations quand un coup porte</label>
+  <fieldset>
+    <legend>Couleurs</legend>
+    <label><input type="radio" name="couleurs" value="blanc-sur-noir"> Blanc sur noir</label>
+    <label><input type="radio" name="couleurs" value="noir-sur-blanc"> Noir sur blanc</label>
+    <label><input type="radio" name="couleurs" value="jaune-sur-noir"> Jaune sur noir</label>
+    <label><input type="radio" name="couleurs" value="orange-sur-noir"> Orange sur noir</label>
+  </fieldset>
+  <fieldset>
+    <legend>Taille du texte</legend>
+    <label><input type="radio" name="taille" value="100"> Normale</label>
+    <label><input type="radio" name="taille" value="125"> Grande</label>
+    <label><input type="radio" name="taille" value="150"> Très grande</label>
+    <label><input type="radio" name="taille" value="175"> Immense</label>
+  </fieldset>
   <fieldset>
     <legend>Volumes</legend>
     <label for="volume-bruitages">Bruitages et dés</label>

@@ -27,6 +27,8 @@ export function installerCombat(montrer, collecte) {
   var desEnCours = document.getElementById('des-en-cours');
   var zonePoint = document.getElementById('point');
   var image = document.getElementById('illustration');
+  var cadreImage = document.getElementById('cadre-illustration');
+  var caseVibrations = caseMemorisee('reglage-vibrations', 'vibrations');
   var caseDes = caseMemorisee('reglage-des', 'des');
   var caseIllustrations = caseMemorisee('reglage-illustrations', 'illustrations');
 
@@ -226,11 +228,11 @@ export function installerCombat(montrer, collecte) {
   // En grand sur l'écran « Ton adversaire », en bandeau pendant le combat, absente pendant les règles.
   function afficherIllustration() {
     var p = partie();
-    if (!p || !p.enCombat || !caseIllustrations.checked) { image.hidden = true; return; }
+    if (!p || !p.enCombat || !caseIllustrations.checked) { cadreImage.hidden = true; return; }
     var source = 'images/' + p.cleMonstre + '.jpg';
     if (image.getAttribute('src') !== source) { image.setAttribute('src', source); }
     image.classList.toggle('bandeau', p.tours > 0);
-    image.hidden = false;
+    cadreImage.hidden = false;
   }
 
   // ---------------------------------------------------------------------
@@ -260,9 +262,25 @@ export function installerCombat(montrer, collecte) {
     Sons.jouer(son[0], son[1], son[2]);
   }
 
-  // Joue les bruitages de l'écran qui vient d'apparaître.
+  // Vibrations (téléphones qui le permettent) : un motif par événement, en millisecondes.
+  var VIBRATIONS = { victoire: [80, 60, 80], 'mort-heros': [500], 'chance-reussie': [30, 40, 30], fuite: [60] };
+  function vibrer(motif) {
+    if (motif && caseVibrations.checked && navigator.vibrate) { try { navigator.vibrate(motif); } catch (e) { /* refusé */ } }
+  }
+
+  // Vibrations de l'écran qui vient d'apparaître : coup reçu, coup porté, fin du combat.
+  function vibrations(sons, avant, apres) {
+    var evenement = sons.filter(function (s) { return VIBRATIONS[s[0]]; })[0];
+    if (evenement) { vibrer(VIBRATIONS[evenement[0]]); return; }
+    if (!avant) { return; }
+    if (apres.heros < avant.heros || apres.etatHeros > avant.etatHeros) { vibrer([200]); return; }
+    if (apres.monstre < avant.monstre || apres.etatMonstre > avant.etatMonstre) { vibrer([40]); }
+  }
+
+  // Joue les bruitages (et les vibrations) de l'écran qui vient d'apparaître.
   function bruitages(sons) {
     var p = partie();
+    if (p) { vibrations(sons, dernierInstantane, instantane(p)); }
     if (!p || !window.Sons) { return; }
     var avant = dernierInstantane;
     var apres = instantane(p);

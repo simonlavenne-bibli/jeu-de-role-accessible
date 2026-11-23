@@ -33,6 +33,27 @@ function installerVolumes() {
   });
 }
 
+// Couleurs et taille du texte : un attribut sur <html>, lu par le CSS, gardé sur l'appareil.
+// (La page les applique déjà au chargement, dans son <head>.)
+function choixMemorise(nom, attribut, defaut) {
+  var actuel = document.documentElement.getAttribute(attribut) || defaut;
+  document.querySelectorAll('input[name="' + nom + '"]').forEach(function (r) {
+    r.checked = (r.value === actuel);
+    r.addEventListener('change', function () {
+      if (!r.checked) { return; }
+      document.documentElement.setAttribute(attribut, r.value);
+      try { localStorage.setItem(nom, r.value); } catch (e) { /* stockage indisponible */ }
+    });
+  });
+}
+
+export function installerAffichage() {
+  choixMemorise('couleurs', 'data-couleurs', 'blanc-sur-noir');
+  choixMemorise('taille', 'data-taille', '100');
+  // Les vibrations n'existent pas partout (pas sur iPhone) : la case n'apparaît que si elles marchent.
+  if (!navigator.vibrate) { document.getElementById('ligne-vibrations').hidden = true; }
+}
+
 // Réglage « Bruitages et ambiance », volumes, et écran « Écouter les bruitages » (module sons.js).
 export function installerBruitages() {
   installerVolumes();

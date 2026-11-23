@@ -18,7 +18,7 @@
   // Styles du tapis et des dés, ajoutés une seule fois à la page.
   var style = document.createElement('style');
   style.textContent = [
-    '.tapis-des { position: relative; height: 18rem; border: 3px solid #fff; overflow: hidden; perspective: 700px; perspective-origin: 50% -30%; }',
+    '.tapis-des { position: relative; height: 18rem; border: 3px solid var(--encre, #fff); overflow: hidden; perspective: 700px; perspective-origin: 50% -30%; }',
     '.tapis-des .emplacement { position: absolute; left: 0; top: 0; transform-style: preserve-3d; will-change: transform; }',
     '.tapis-des .ombre { position: absolute; left: 0; top: 0; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,0.25), rgba(255,255,255,0)); will-change: transform, opacity; }',
     '.tapis-des .de { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }',
