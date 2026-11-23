@@ -3,7 +3,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { jouer, LISTE_SYSTEMES, LISTE_MONSTRES } from './robot.js';
 import { creerHasard } from '../essais/combats/moteur/hasard.js';
 import { MONSTRES } from '../essais/combats/contenu/textes.js';
@@ -146,4 +146,18 @@ test('faire le point ne change rien au combat et se traduit dans tous les systè
       phrases.forEach(function (p) { assert.ok(!/undefined|NaN/.test(p), systeme + ' : ' + p); });
     });
   });
+});
+
+test('hors ligne : chaque fichier de la page est gardé par le service worker, et existe', function () {
+  var sw = readFileSync('essais/sw.js', 'utf8');
+  var listes = sw.match(/'\.\/[^']+'/g).map(function (f) { return 'essais/' + f.slice(3, -1); });
+  listes.forEach(function (f) { assert.ok(existsSync(f), 'fichier introuvable : ' + f); });
+  function parcourir(dossier) {
+    return readdirSync(dossier, { withFileTypes: true }).flatMap(function (e) {
+      return e.isDirectory() ? parcourir(dossier + e.name + '/') : [dossier + e.name];
+    });
+  }
+  var attendus = parcourir('essais/combats/').concat(parcourir('essais/images/'), parcourir('essais/sons/'), parcourir('essais/icones/'),
+    ['essais/audio.js', 'essais/sons.js', 'essais/musique.js', 'essais/des3d.js', 'essais/combats.html']);
+  attendus.forEach(function (f) { assert.ok(listes.includes(f), f + ' manque dans essais/sw.js (FICHIERS)'); });
 });

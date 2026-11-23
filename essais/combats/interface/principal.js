@@ -11,6 +11,13 @@ import { installerCombat } from './combat.js';
 
 var collecte = installerCollecte();
 
+// Hors ligne et installation sur l'écran d'accueil (sw.js). Sans effet si le navigateur ne le permet pas.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* pas de hors ligne, la page marche quand même */ });
+  });
+}
+
 // Affiche un seul écran à la fois et place le focus sur son titre.
 function montrer(id) {
   if (id !== 'histoire' && window.Musique) { Musique.arreter(); }
