@@ -24,6 +24,7 @@ export function installerCombat(montrer, collecte) {
   var titreCombat = document.getElementById('titre-combat');
   var sousTitre = document.getElementById('sous-titre');
   var tapis = document.getElementById('tapis');
+  var desEnCours = document.getElementById('des-en-cours');
   var image = document.getElementById('illustration');
   var caseDes = caseMemorisee('reglage-des', 'des');
   var caseIllustrations = caseMemorisee('reglage-illustrations', 'illustrations');
@@ -74,12 +75,12 @@ export function installerCombat(montrer, collecte) {
       zoneRecit.appendChild(p);
     });
     window.scrollTo(0, 0);
-    zoneRecit.focus();
-    // Pendant que les dés roulent, les compteurs gardent leurs anciennes valeurs,
+    // Pendant que les dés roulent, le récit reste caché : le focus va sur « Les dés roulent… »,
+    // puis sur le récit une fois les dés arrêtés. Les compteurs gardent leurs anciennes valeurs,
     // et les bruitages attendent que les dés s'arrêtent.
     var sons = sonsEnAttente;
     sonsEnAttente = [];
-    if (!montrerDes(sons)) { afficherCompteurs(); bruitages(sons); }
+    if (!montrerDes(sons)) { zoneRecit.focus(); afficherCompteurs(); bruitages(sons); }
   }
 
   // choix = [[message ou libellé, fonction], …]
@@ -190,8 +191,11 @@ export function installerCombat(montrer, collecte) {
     if (!valeurs.length || !caseDes.checked || !window.Des3D || !p || !p.enCombat) { tapis.hidden = true; return false; }
     tapis.hidden = false;
     ecranCombat.classList.add('roule');
+    desEnCours.hidden = false;
+    desEnCours.focus();
     Des3D.lancer(tapis, valeurs).then(function () {
       ecranCombat.classList.remove('roule');
+      desEnCours.hidden = true;
       afficherCompteurs();
       bruitages(sons);
       zoneRecit.focus();

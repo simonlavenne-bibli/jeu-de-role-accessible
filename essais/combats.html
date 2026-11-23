@@ -66,7 +66,7 @@
   #titre-combat { margin-top: 0.2rem; }
   #recit { font-size: 1.35rem; }
   #recit { min-height: 6rem; margin-bottom: 0.8rem; }
-  #recit:focus { outline: none; }
+  #recit:focus, #des-en-cours:focus { outline: none; }
   #des { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.8rem; }
   #des button { text-align: center; min-height: 4.6rem; padding: 0.3rem; }
   #des button[aria-pressed="true"] { background: var(--encre); color: var(--fond); }
@@ -159,6 +159,8 @@
   <h1 id="titre-combat">Règles</h1>
   <!-- Les dés qui roulent : décoratif, le résultat est toujours écrit dans le récit. -->
   <div id="tapis" aria-hidden="true" hidden></div>
+  <!-- Pendant que les dés roulent, le focus est ici : le récit, encore caché, n'est lu qu'une fois les dés arrêtés. -->
+  <p id="des-en-cours" class="discret" tabindex="-1" hidden>Les dés roulent…</p>
   <div id="recit" tabindex="-1"></div>
   <div id="des" hidden></div>
   <div id="choix"></div>
