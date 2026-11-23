@@ -19,8 +19,23 @@ export function lireRadio(nom) {
   return choisi ? choisi.value : null;
 }
 
-// Réglage « Bruitages et ambiance » et écran « Écouter les bruitages » (module sons.js).
+// Les curseurs de volume, une couche de son chacun (essais/audio.js).
+function installerVolumes() {
+  document.querySelectorAll('input[data-couche]').forEach(function (curseur) {
+    var couche = curseur.getAttribute('data-couche');
+    function dire() { curseur.setAttribute('aria-valuetext', curseur.value + ' %'); }
+    curseur.value = String(Math.round((window.Mixeur ? Mixeur.lireVolume(couche) : 1) * 100));
+    dire();
+    curseur.addEventListener('input', function () {
+      dire();
+      if (window.Mixeur) { Mixeur.volume(couche, parseInt(curseur.value, 10) / 100); }
+    });
+  });
+}
+
+// Réglage « Bruitages et ambiance », volumes, et écran « Écouter les bruitages » (module sons.js).
 export function installerBruitages() {
+  installerVolumes();
   var caseSons = caseMemorisee('reglage-sons', 'sons', function (coche) {
     if (window.Sons) { Sons.activer(coche); }
   });

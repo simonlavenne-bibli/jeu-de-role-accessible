@@ -43,6 +43,7 @@
   .boutons { display: flex; flex-direction: column; gap: 0.6rem; margin: 1rem 0; }
   .retour { margin-top: 0.6rem; font-weight: normal; min-height: 3rem; }
   .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
+  .volume { display: block; width: 100%; height: 2.6rem; margin: 0 0 0.6rem; accent-color: var(--encre); }
   .champ { font: inherit; width: 100%; padding: 0.5rem; margin: 0.2rem 0 0.8rem; background: var(--fond); color: var(--encre); border: 3px solid var(--encre); }
   /* Compteurs du combat : monstre en haut à gauche, héros en haut à droite. */
   #compteurs { display: flex; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.6rem; }
@@ -233,6 +234,17 @@
   <label class="case"><input type="checkbox" id="reglage-musique" checked> Musique de l'histoire</label>
   <label class="case"><input type="checkbox" id="reglage-des" checked> Animation et bruit des dés</label>
   <label class="case"><input type="checkbox" id="reglage-sons" checked> Bruitages et ambiance</label>
+  <fieldset>
+    <legend>Volumes</legend>
+    <label for="volume-bruitages">Bruitages et dés</label>
+    <input type="range" id="volume-bruitages" data-couche="bruitages" min="0" max="100" step="10" class="volume">
+    <label for="volume-ambiance">Ambiance de fond</label>
+    <input type="range" id="volume-ambiance" data-couche="ambiance" min="0" max="100" step="10" class="volume">
+    <label for="volume-musique">Musique de l'histoire</label>
+    <input type="range" id="volume-musique" data-couche="musique" min="0" max="100" step="10" class="volume">
+    <label for="volume-indices">Indices du système C</label>
+    <input type="range" id="volume-indices" data-couche="indices" min="0" max="100" step="10" class="volume">
+  </fieldset>
   <div class="boutons"><button type="button" data-aller="ecouter-sons">Écouter les bruitages</button></div>
   <fieldset>
     <legend>Dé de chance : réussite à partir de</legend>
@@ -286,6 +298,7 @@
 
 </main>
 
+<script src="audio.js"></script>
 <script src="musique.js"></script>
 <script src="sons.js"></script>
 <script src="des3d.js"></script>

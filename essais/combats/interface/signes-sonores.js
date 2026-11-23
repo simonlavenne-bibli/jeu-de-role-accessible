@@ -17,15 +17,13 @@ var audio = null;
 var bruitBlanc = null;
 
 export function preparerAudio() {
+  if (!window.Mixeur || !Mixeur.preparer()) { return false; }
   if (!audio) {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) { return false; }
-    audio = new AC();
+    audio = Mixeur.contexte();   // le contexte unique de la page (essais/audio.js)
     bruitBlanc = audio.createBuffer(1, audio.sampleRate, audio.sampleRate);
     var data = bruitBlanc.getChannelData(0);
     for (var i = 0; i < data.length; i++) { data[i] = Math.random() * 2 - 1; }
   }
-  if (audio.state === 'suspended') { audio.resume(); }
   return true;
 }
 
@@ -33,7 +31,7 @@ function hasard(min, max) { return min + Math.random() * (max - min); }
 
 // Un son : glissement de fréquence, enveloppe, filtre, position gauche-droite.
 function son(voix, t, f1, f2, duree, pan, filtre) {
-  var sortie = audio.destination;
+  var sortie = Mixeur.couche('indices');
   if (audio.createStereoPanner) {
     var p = audio.createStereoPanner();
     p.pan.value = pan;

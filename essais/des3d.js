@@ -87,16 +87,14 @@
 
   // À appeler pendant un appui du joueur : iPhone n'autorise le son qu'à ce moment-là.
   function preparerSon() {
+    if (!window.Mixeur || !Mixeur.preparer()) { return false; }
     if (!audio) {
-      var Contexte = window.AudioContext || window.webkitAudioContext;
-      if (!Contexte) { return false; }
-      audio = new Contexte();
+      audio = Mixeur.contexte();   // le contexte unique de la page (audio.js)
       // Une seconde de bruit blanc, réutilisée pour chaque choc.
       bruit = audio.createBuffer(1, audio.sampleRate, audio.sampleRate);
       var donnees = bruit.getChannelData(0);
       for (var i = 0; i < donnees.length; i += 1) { donnees[i] = Math.random() * 2 - 1; }
     }
-    if (audio.state === 'suspended') { audio.resume(); }
     return true;
   }
 
@@ -123,7 +121,7 @@
       volume.connect(panneau);
       sortie = panneau;
     }
-    sortie.connect(audio.destination);
+    sortie.connect(Mixeur.couche('bruitages'));
     source.start(instant, entre(0, 0.9), duree + 0.02);
   }
 
