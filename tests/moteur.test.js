@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { jouer, LISTE_SYSTEMES, LISTE_MONSTRES } from './robot.js';
 import { creerHasard } from '../essais/combats/moteur/hasard.js';
-import { MONSTRES } from '../essais/combats/moteur/donnees.js';
+import { MONSTRES } from '../essais/combats/contenu/textes.js';
 
 var PARTIES = 150;
 
@@ -16,11 +16,11 @@ test('chaque combat se termine, dans les 7 systèmes et contre les 3 adversaires
       ['premier', 'hasard'].forEach(function (choisir) {
         for (var graine = 1; graine <= PARTIES; graine += 1) {
           var r = jouer({ systeme: systeme, monstre: monstre, graine: graine, choisir: choisir });
-          var d = r.resultat.donnees;
+          var d = r.resultat;
           var cas = systeme + ' contre ' + monstre + ', graine ' + graine + ', robot ' + choisir;
           assert.ok(['victoire', 'mort', 'fuite'].includes(d.issue), cas);
           assert.equal(d.systeme, systeme, cas);
-          assert.ok(r.resultat.ligne.startsWith('Système ' + systeme + ' · '), cas);
+          assert.ok(r.ligne.startsWith('Système ' + systeme + ' · '), cas);
           assert.ok(r.partie.vie <= r.partie.vieMax, cas);
           assert.ok(r.partie.chances >= 0, cas);
           if (d.issue === 'victoire') { assert.ok(r.partie.vieMonstre <= 0 || r.partie.niveauMonstre >= 4, cas); }
@@ -88,12 +88,15 @@ test('système C sans son : l\'intention du monstre est décrite par un geste', 
   assert.ok(r.ecrans.some(function (e) { return gestes.includes(e.phrases[0]); }));
 });
 
-test('le moteur ne touche jamais à la page ni au son', function () {
+test('le moteur ne touche jamais à la page ni au son, et ne contient aucun texte', function () {
   var dossiers = ['essais/combats/moteur/', 'essais/combats/moteur/systemes/'];
   dossiers.forEach(function (dossier) {
     readdirSync(dossier).filter(function (f) { return f.endsWith('.js'); }).forEach(function (f) {
       var code = readFileSync(dossier + f, 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
       assert.ok(!/\b(document|window|localStorage|AudioContext|Sons|Des3D|Musique)\b/.test(code), dossier + f);
+      // Aucun texte français non plus : seulement des messages nommés (voir contenu/textes.js).
+      var phrase = code.match(/'[^'\n]*[a-zéèàù]{2,} [a-zéèàù]{2,}[^'\n]*'/i);
+      assert.ok(!phrase || /Combat inconnu/.test(phrase[0]), dossier + f + ' contient un texte : ' + (phrase && phrase[0]));
     });
   });
 });

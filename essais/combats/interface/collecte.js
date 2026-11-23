@@ -1,7 +1,7 @@
 /**
  * collecte.js — Envoi des résultats à la feuille Google, bilan de la séance et journal des combats.
  */
-import { pluriel } from '../moteur/texte.js';
+import { pluriel } from '../contenu/textes.js';
 import { lireRadio } from './reglages.js';
 
 // Adresse de l'application Google Apps Script qui reçoit les résultats.

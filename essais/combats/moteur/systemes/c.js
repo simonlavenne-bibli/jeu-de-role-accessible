@@ -5,52 +5,41 @@
  * Le moteur choisit l'intention ; l'interface fabrique et joue le son.
  */
 import { HEROS } from '../donnees.js';
-import { pv } from '../texte.js';
 
 var POSTURE_JUSTE = { bondir: 'esquiver', proteger: 'attaquer', tourner: 'parer' };
-var INTENTIONS = { bondir: 'Il voulait bondir.', proteger: 'Il voulait se protéger.', tourner: 'Il cherchait une ouverture.' };
 
 export default function systemeC(c) {
   var partie = c.partie;
-  var de = c.de, au = c.au;
+  var de = c.de, msg = c.msg, tirage = c.tirage;
 
   var C = {
-    nom: 'C, écouter le monstre',
     init: function () {},
     regles: function () {
-      var r = partie.regles;
-      var annonce = partie.indice === 'sonore'
-        ? ['Règles. Avant chaque assaut, ' + partie.monstre.nom + ' fait un bruit qui annonce son intention. Un son qui monte : il va bondir sur toi. Deux sons graves et étouffés : il se protège. Trois sons qui passent d\'une oreille à l\'autre : il tourne autour de toi pour chercher une ouverture.',
-           'Chaque monstre a sa propre voix, et ses bruits changent un peu d\'un assaut à l\'autre. Tu peux réécouter une fois par assaut. Après l\'assaut, tu sauras ce qu\'il voulait faire.']
-        : ['Règles. Avant chaque assaut, ' + partie.monstre.nom + ' fait un geste qui annonce son intention : bondir sur toi, se protéger, ou tourner autour de toi pour chercher une ouverture. À toi de deviner laquelle.'];
-      return annonce.concat([
-        'Tu choisis alors ta posture. Esquiver contre un bond, attaquer quand il se protège, parer quand il cherche une ouverture : la bonne posture ajoute 3 à ton total.',
-        'Puis chacun lance deux dés et ajoute son habileté : 7 pour toi, ' + r.habilete + ' pour ' + partie.monstre.nom + '. Le plus haut total touche.',
-        'Tes coups retirent 2 points de vie, 3 si tu as choisi d\'attaquer. Ses coups retirent ' + pv(r.degats) + ', le double s\'il bondit et que tu n\'esquives pas, 1 de moins si tu pares. Quand il se protège, il ne frappe pas.'
-      ]);
+      var annonce = partie.indice === 'sonore' ? ['C.regle-son-1', 'C.regle-son-2'] : ['C.regle-geste'];
+      return annonce.concat(['C.regle-posture', 'C.regle-jet', 'C.regle-degats']);
     },
     tour: function () {
       var intentions = ['bondir', 'proteger', 'tourner'];
       var intention = intentions[Math.floor(c.hasard() * 3)];
       var choix = [
-        ['Attaquer', function () { C.assaut(intention, 'attaquer'); }],
-        ['Esquiver', function () { C.assaut(intention, 'esquiver'); }],
-        ['Parer', function () { C.assaut(intention, 'parer'); }],
-        ['Fuir', c.fuir]
+        [msg('choix-attaquer'), function () { C.assaut(intention, 'attaquer'); }],
+        [msg('choix-esquiver'), function () { C.assaut(intention, 'esquiver'); }],
+        [msg('choix-parer'), function () { C.assaut(intention, 'parer'); }],
+        [msg('choix-fuir'), c.fuir]
       ];
       if (partie.indice !== 'sonore') {
-        c.raconter([au(partie.monstre.signes[intention])]);
+        c.raconter([msg('C.geste', { intention: intention, tirage: tirage() })]);
         c.proposer(choix);
         return;
       }
       // Indice sonore : l'interface rejoue le même son pour la réécoute.
       var reecoute = false;
-      c.raconter(['Écoute ' + partie.monstre.nom + '…']);
-      choix.push(['Réécouter', function () {
+      c.raconter([msg('C.ecoute')]);
+      choix.push([msg('choix-reecouter'), function () {
         if (reecoute) { return; }
         reecoute = true;
         partie.decisions.reecoutes += 1;
-        c.ui.modifierChoix(4, 'Réécouter : déjà utilisé');
+        c.ui.modifierChoix(4, msg('choix-reecouter-utilise'));
         c.ui.signe(intention, true);
       }]);
       c.proposer(choix);
@@ -62,56 +51,49 @@ export default function systemeC(c) {
       partie.decisions.lectures += 1;
       if (juste) { partie.decisions.bonnesLectures += 1; }
       var dh = [de(), de()];
-      var bonus = juste ? 3 : 0;
-      var th = dh[0] + dh[1] + HEROS.habilete + bonus;
+      var th = dh[0] + dh[1] + HEROS.habilete + (juste ? 3 : 0);
       c.versMonstre([
-        INTENTIONS[intention] + (juste ? ' Bonne lecture : plus 3.' : ' Mauvaise lecture.'),
-        'Tu lances ' + dh[0] + ' et ' + dh[1] + '. Total : ' + th + '.'
+        msg('C.lecture', { intention: intention, juste: juste }),
+        msg('C.jet-heros', { des: dh, total: th })
       ], function () { C.comparer(intention, posture, th); });
     },
     comparer: function (intention, posture, th) {
       var r = partie.regles;
       var dm = [de(), de()];
       var tm = dm[0] + dm[1] + r.habilete;
-      var phrases = [
-        partie.monstre.Nom + ' lance ' + dm[0] + ' et ' + dm[1] + '. Total : ' + tm + ', contre ton ' + th + '.'
-      ];
+      var messages = [msg('C.jet-monstre', { des: dm, total: tm, totalHeros: th })];
       if (th > tm) {
         var inflige = 2 + (posture === 'attaquer' ? 1 : 0);
         partie.vieMonstre -= inflige;
-        phrases.push(au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd ' + pv(inflige) + '.');
-        if (partie.vieMonstre <= 0) { c.vaincre(phrases); return; }
-        c.finAssaut(phrases);
+        messages.push(msg('monstre-touche', { tirage: tirage(), degats: inflige }));
+        if (partie.vieMonstre <= 0) { c.vaincre(messages); return; }
+        c.finAssaut(messages);
         return;
       }
       if (th === tm) {
-        c.finAssaut(phrases.concat(['Égalité. Personne n\'est touché.']));
+        c.finAssaut(messages.concat([msg('C.egalite')]));
         return;
       }
       if (intention === 'proteger') {
         c.signaler('parade');
-        c.finAssaut(phrases.concat(['Tu ne passes pas sa garde, mais il ne riposte pas.']));
+        c.finAssaut(messages.concat([msg('C.garde')]));
         return;
       }
       var degats = r.degats;
-      var precision = '';
-      if (intention === 'bondir' && posture !== 'esquiver') { degats *= 2; precision = ' Son bond double les dégâts.'; }
-      if (posture === 'parer') { degats -= 1; precision += ' Ta parade en retire 1.'; }
+      var bond = intention === 'bondir' && posture !== 'esquiver';
+      if (bond) { degats *= 2; }
+      if (posture === 'parer') { degats -= 1; }
       if (degats <= 0) {
         c.signaler('parade');
-        c.finAssaut(phrases.concat(['Ta parade bloque tout le coup.']));
+        c.finAssaut(messages.concat([msg('C.parade-totale')]));
         return;
       }
-      c.subir(degats, phrases.concat([au(partie.monstre.frappe) + precision]));
+      c.subir(degats, messages.concat([msg('C.frappe', { tirage: tirage(), bond: bond, parade: posture === 'parer' })]));
     },
-    fuiteRatee: function (phrases) {
-      c.versMonstre(phrases, function () {
-        c.subir(partie.regles.degats, [partie.monstre.Nom + ' frappe sans riposte. ' + au(partie.monstre.frappe)]);
+    fuiteRatee: function (messages) {
+      c.versMonstre(messages, function () {
+        c.subir(partie.regles.degats, [msg('frappe-sans-riposte', { tirage: tirage() })]);
       });
-    },
-    journal: function (d) {
-      return ' · indice ' + partie.indice + ' · bonnes lectures ' + d.bonnesLectures + '/' + d.lectures +
-        (partie.indice === 'sonore' ? ' · réécoutes ' + d.reecoutes : '');
     }
   };
   return C;

@@ -29,7 +29,7 @@ function taux(systeme, monstre, lecture) {
   var victoires = 0, tours = 0;
   for (var g = 1; g <= N; g += 1) {
     var r = jouer({ systeme: systeme, monstre: monstre, graine: g, choisir: joueur(systeme, lecture) });
-    if (r.resultat.donnees.issue === 'victoire') { victoires += 1; }
+    if (r.resultat.issue === 'victoire') { victoires += 1; }
     tours += r.partie.tours;
   }
   return { victoires: Math.round(100 * victoires / N), tours: (tours / N).toFixed(1) };

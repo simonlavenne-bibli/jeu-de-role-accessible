@@ -2,10 +2,11 @@
  * combat.js (interface) — Affiche le combat que le moteur déroule, et le fait entendre.
  *
  * Le moteur (../moteur/combat.js) décide de tout ; ce module ne fait que traduire
- * ses demandes en texte, boutons, dés qui roulent, illustration et bruitages.
+ * ses messages en texte (../contenu/textes.js), boutons, dés qui roulent,
+ * illustration et bruitages.
  */
 import { creerCombat } from '../moteur/combat.js';
-import { pluriel } from '../moteur/texte.js';
+import { ecrire, compteurs, ligneDeJournal, nomDeLAdversaire, etiquetteDeB, NOMS_SYSTEMES, MONSTRES } from '../contenu/textes.js';
 import { caseMemorisee, lireRadio } from './reglages.js';
 import { preparerAudio, tirerVariante, jouerSigne } from './signes-sonores.js';
 
@@ -36,18 +37,19 @@ export function installerCombat(montrer, collecte) {
   var varianteSigne = null;
 
   function partie() { return combat ? combat.partie : null; }
+  function texte(message) { return ecrire(message, combat.partie); }
 
   // ---------------------------------------------------------------------
   // CE QUE LE MOTEUR DEMANDE (voir ../moteur/combat.js)
   // ---------------------------------------------------------------------
   var ui = {
-    titre: function (texte) { titreCombat.textContent = texte; },
+    titre: function (message) { titreCombat.textContent = texte(message); },
     raconter: raconter,
     proposer: proposer,
-    modifierChoix: function (rang, libelle) {
+    modifierChoix: function (rang, message) {
       var bouton = zoneChoix.querySelectorAll('button')[rang];
       if (bouton) {
-        bouton.textContent = (rang + 1) + '. ' + libelle;
+        bouton.textContent = (rang + 1) + '. ' + texte(message);
         bouton.setAttribute('aria-disabled', 'true');
       }
     },
@@ -63,12 +65,12 @@ export function installerCombat(montrer, collecte) {
   };
 
   // Écrit le récit de l'écran et place le focus dessus, pour qu'un lecteur d'écran le lise.
-  function raconter(phrases) {
+  function raconter(messages) {
     zoneRecit.textContent = '';
     zoneChoix.textContent = '';
-    phrases.forEach(function (texte) {
+    messages.forEach(function (message) {
       var p = document.createElement('p');
-      p.textContent = texte;
+      p.textContent = texte(message);
       zoneRecit.appendChild(p);
     });
     window.scrollTo(0, 0);
@@ -80,13 +82,13 @@ export function installerCombat(montrer, collecte) {
     if (!montrerDes(sons)) { afficherCompteurs(); bruitages(sons); }
   }
 
-  // choix = [[libellé, fonction], …]
+  // choix = [[message ou libellé, fonction], …]
   function proposer(liste) {
     zoneChoix.textContent = '';
     liste.forEach(function (c, i) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.textContent = (i + 1) + '. ' + c[0];
+      b.textContent = (i + 1) + '. ' + (typeof c[0] === 'string' ? c[0] : texte(c[0]));
       b.addEventListener('click', function () { desEnAttente = []; sonsPrets(); c[1](); });
       zoneChoix.appendChild(b);
     });
@@ -107,8 +109,9 @@ export function installerCombat(montrer, collecte) {
       b.appendChild(face);
       b.appendChild(etiquette);
       function majEtiquette(e) {
-        etiquette.textContent = e.sens + ', ' + e.etat;
-        b.setAttribute('aria-label', 'Dé ' + (i + 1) + ' : ' + e.valeur + ', ' + e.sens + ', ' + e.etat);
+        var mots = etiquetteDeB(e);
+        etiquette.textContent = mots.sens + ', ' + mots.etat;
+        b.setAttribute('aria-label', 'Dé ' + (i + 1) + ' : ' + e.valeur + ', ' + mots.sens + ', ' + mots.etat);
         b.setAttribute('aria-pressed', e.relancer ? 'true' : 'false');
       }
       if (d.bloque) {
@@ -131,9 +134,10 @@ export function installerCombat(montrer, collecte) {
     minuteurSigne = setTimeout(function () { jouerSigne(cle, intention, variante); }, DELAI_SIGNE);
   }
 
-  function terminer(resultat) {
+  function terminer(donnees) {
     var heure = new Date().toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
-    collecte.enregistrerCombat(resultat.donnees, heure + ' · ' + resultat.ligne);
+    var p = combat.partie;
+    collecte.enregistrerCombat(Object.assign({}, donnees, { adversaire: nomDeLAdversaire(p) }), heure + ' · ' + ligneDeJournal(p));
     proposer([
       ['Rejouer le même combat', function () { commencer(dernierChoix.systeme, dernierChoix.monstre); }],
       ['Changer de combat', function () { quitterCombat('choix-systeme'); }],
@@ -163,7 +167,7 @@ export function installerCombat(montrer, collecte) {
       ui: ui
     });
     zoneDes.hidden = true;
-    sousTitre.textContent = 'Système ' + combat.nom + ' · contre ' + combat.partie.monstre.nom;
+    sousTitre.textContent = 'Système ' + NOMS_SYSTEMES[systeme] + ' · contre ' + MONSTRES[monstre].nom;
     montrer('combat');
     combat.demarrer();
   }
@@ -204,14 +208,7 @@ export function installerCombat(montrer, collecte) {
     sousTitre.hidden = !!(p && p.tours > 0);
     afficherIllustration();
     if (!p || !p.enCombat) { zoneCompteurs.hidden = true; return; }
-    var c = {
-      monstre: p.monstre.Nom.replace(/^Le /, '').replace(/^./, function (l) { return l.toUpperCase(); }),
-      valeurMonstre: String(Math.max(0, p.vieMonstre)),
-      valeurHeros: String(Math.max(0, p.vie)),
-      extra: [pluriel(p.chances, 'dé de chance', 'dés de chance')],
-      mots: false
-    };
-    if (combat.moteur.compteurs) { combat.moteur.compteurs(c); }
+    var c = compteurs(p);
     document.getElementById('nom-monstre').textContent = c.monstre;
     document.getElementById('vie-monstre').textContent = c.valeurMonstre;
     document.getElementById('vie-heros').textContent = c.valeurHeros;

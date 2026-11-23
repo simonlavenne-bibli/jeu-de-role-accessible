@@ -3,18 +3,17 @@
  * 6 dés, jusqu'à 3 lancers : 6 = coup, 5 = parade, 1 = crâne.
  */
 import { SEUIL_TREBUCHE, LANCERS_MAX, NB_DES_B } from '../donnees.js';
-import { pv, pluriel, liste } from '../texte.js';
 
 function sens(v) {
   if (v === 6) { return 'coup'; }
   if (v === 5) { return 'parade'; }
-  if (v === 1) { return 'crâne'; }
+  if (v === 1) { return 'crane'; }
   return 'rien';
 }
 
 export default function systemeB(c) {
   var partie = c.partie;
-  var de = c.de, au = c.au;
+  var de = c.de, msg = c.msg, tirage = c.tirage;
   var desB = [];          // [{ valeur, relancer }]
   var lancerB_n = 0;
 
@@ -29,22 +28,13 @@ export default function systemeB(c) {
     return n;
   }
 
-  function resume(n) {
-    var morceaux = [];
-    if (n.coups) { morceaux.push(pluriel(n.coups, 'coup', 'coups')); }
-    if (n.parades) { morceaux.push(pluriel(n.parades, 'parade', 'parades')); }
-    if (n.cranes) { morceaux.push(pluriel(n.cranes, 'crâne', 'crânes')); }
-    if (n.rien) { morceaux.push(n.rien + ' sans effet'); }
-    return 'Tu as ' + liste(morceaux) + '.';
-  }
-
   // Ce que l'interface affiche pour un dé.
   function etatDe(i) {
     var d = desB[i];
     return {
       valeur: d.valeur,
       sens: sens(d.valeur),
-      etat: d.valeur === 1 ? 'bloqué' : (d.relancer ? 'à relancer' : 'gardé'),
+      etat: d.valeur === 1 ? 'bloque' : (d.relancer ? 'a-relancer' : 'garde'),
       bloque: d.valeur === 1,
       relancer: d.relancer
     };
@@ -59,22 +49,13 @@ export default function systemeB(c) {
   }
 
   var B = {
-    nom: 'B, garder et relancer',
     parTours: true,
     init: function () {},
-    regles: function () {
-      var r = partie.regles;
-      return [
-        'Règles. À ton tour, tu lances 6 dés. Après chaque lancer, tu choisis les dés à relancer, jusqu\'à 3 lancers. Tu peux t\'arrêter quand tu veux.',
-        'Un 6 est un coup : ' + partie.monstre.nom + ' perd 1 point de vie. Un 5 est une parade : elle bloque 1 point de dégâts. Un 1 est un crâne : il reste sur la table. Les 2, 3 et 4 ne donnent rien.',
-        'Si une relance amène ton troisième crâne, tu trébuches : tes coups et tes parades de ce tour sont perdus. Des crânes au premier lancer ne te font jamais trébucher.',
-        'À la fin de ton tour, ' + partie.monstre.nom + ' frappe : ' + pv(r.force) + ', moins tes parades.'
-      ];
-    },
+    regles: function () { return ['B.regle-1', 'B.regle-2', 'B.regle-3', 'B.regle-4']; },
     tour: function () {
-      c.raconter(['Que fais-tu ?']);
+      c.raconter([msg('que-fais-tu')]);
       c.ui.cacherDes();
-      c.proposer([['Attaquer', function () { B.lancer(true); }], ['Fuir', c.fuir]]);
+      c.proposer([[msg('choix-attaquer'), function () { B.lancer(true); }], [msg('choix-fuir'), c.fuir]]);
     },
     // premier : vrai pour le premier lancer du tour (tous les dés).
     lancer: function (premier) {
@@ -94,25 +75,23 @@ export default function systemeB(c) {
       }
       var n = compter();
       var valeurs = desB.map(function (d) { return d.valeur; }).sort(function (a, b) { return b - a; });
-      var phrases = [(lancerB_n === 1 ? 'Premier' : lancerB_n === 2 ? 'Deuxième' : 'Troisième') + ' lancer : ' + liste(valeurs.map(String)) + '.', resume(n)];
+      var messages = [msg('B.lancer', { numero: lancerB_n, valeurs: valeurs }), msg('B.bilan', n)];
 
       if (!premier && n.cranes >= SEUIL_TREBUCHE && cranesAvant < SEUIL_TREBUCHE) {
         partie.decisions.trebuche += 1;
         c.ui.cacherDes();
-        B.finTour(true, phrases.concat(['Troisième crâne : tu trébuches ! Tes coups et tes parades de ce tour sont perdus.']));
+        B.finTour(true, messages.concat([msg('B.trebuche')]));
         return;
       }
       if (lancerB_n >= LANCERS_MAX) {
         c.ui.cacherDes();
-        B.finTour(false, phrases.concat(['C\'était ton dernier lancer.']));
+        B.finTour(false, messages.concat([msg('B.dernier-lancer')]));
         return;
       }
       // Par défaut, on propose de relancer les dés sans effet.
       desB.forEach(function (d) { d.relancer = (d.valeur >= 2 && d.valeur <= 4); });
-      var reste = LANCERS_MAX - lancerB_n;
-      phrases.push('Il te reste ' + pluriel(reste, 'lancer', 'lancers') + '.' +
-        (n.cranes === SEUIL_TREBUCHE - 1 ? ' Attention : un crâne de plus et tu trébuches.' : ''));
-      c.raconter(phrases);
+      messages.push(msg('B.lancers-restants', { reste: LANCERS_MAX - lancerB_n, attention: n.cranes === SEUIL_TREBUCHE - 1 }));
+      c.raconter(messages);
       afficherDes();
       B.proposerRelance();
     },
@@ -120,50 +99,48 @@ export default function systemeB(c) {
       var nb = desB.filter(function (d) { return d.relancer; }).length;
       var choix = [];
       if (nb > 0) {
-        choix.push(['Relancer ' + pluriel(nb, 'dé', 'dés') + ' (les dés marqués « à relancer »)', function () {
+        choix.push([msg('choix-B-relancer', { nombre: nb }), function () {
           partie.decisions.relances += 1;
           B.lancer(false);
         }]);
       }
-      choix.push(['M\'arrêter et frapper', function () {
+      choix.push([msg('choix-B-arreter'), function () {
         partie.decisions.arrets += 1;
         c.ui.cacherDes();
-        B.finTour(false, ['Tu t\'arrêtes. ' + resume(compter())]);
+        B.finTour(false, [msg('B.arret', compter())]);
       }]);
       c.proposer(choix);
     },
-    finTour: function (trebuche, phrases) {
+    finTour: function (trebuche, messages) {
       var r = partie.regles;
       var n = compter();
       var coups = trebuche ? 0 : n.coups;
       var parades = trebuche ? 0 : n.parades;
-      var texte = phrases.slice();
+      var texte = messages.slice();
       if (coups > 0) {
         partie.vieMonstre -= coups;
-        texte.push(au(partie.monstre.touche) + ' ' + partie.monstre.Nom + ' perd ' + pv(coups) + '.');
+        texte.push(msg('monstre-touche', { tirage: tirage(), degats: coups }));
         if (partie.vieMonstre <= 0) { c.vaincre(texte); return; }
       } else if (!trebuche) {
         c.signaler('rate');
-        texte.push('Aucun de tes coups ne porte.');
+        texte.push(msg('B.aucun-coup'));
       }
-      if (parades > 0) { texte.push('Tu gardes ' + pluriel(parades, 'parade', 'parades') + ' pour son attaque.'); }
+      if (parades > 0) { texte.push(msg('B.parades-gardees', { parades: parades })); }
       c.versMonstre(texte, function () {
         var degats = Math.max(0, r.force - parades);
         if (degats === 0) {
           c.signaler('parade');
-          c.finAssaut([partie.monstre.Nom + ' frappe, mais tes parades bloquent tout.']);
+          c.finAssaut([msg('B.parades-bloquent-tout')]);
           return;
         }
-        c.subir(degats, [partie.monstre.Nom + ' frappe. ' + au(partie.monstre.frappe) +
-          (parades > 0 ? ' Tes parades bloquent ' + pluriel(Math.min(parades, r.force), 'point', 'points') + '.' : '')]);
+        c.subir(degats, [msg('B.frappe', { tirage: tirage(), bloques: parades > 0 ? Math.min(parades, r.force) : 0 })]);
       });
     },
-    fuiteRatee: function (phrases) {
-      c.versMonstre(phrases, function () {
-        c.subir(partie.regles.force, [partie.monstre.Nom + ' frappe sans riposte. ' + au(partie.monstre.frappe)]);
+    fuiteRatee: function (messages) {
+      c.versMonstre(messages, function () {
+        c.subir(partie.regles.force, [msg('frappe-sans-riposte', { tirage: tirage() })]);
       });
-    },
-    journal: function (d) { return ' · relances ' + d.relances + ' · arrêts ' + d.arrets + ' · trébuché ' + d.trebuche; }
+    }
   };
   return B;
 }

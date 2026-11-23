@@ -5,11 +5,15 @@
  * l'interface uniquement par l'objet « ui » qu'on lui donne. On peut donc le
  * faire tourner sans navigateur (tests, simulation d'équilibrage).
  *
+ * Le moteur ne contient aucun texte non plus : il émet des messages nommés,
+ *   { type: 'heros-perd', donnees: { degats: 2 } }
+ * que l'interface traduit en phrases avec ../contenu/textes.js.
+ *
  * Ce que le moteur demande à l'interface (ui) :
- *   titre(texte)                       le titre de l'écran
- *   raconter(phrases)                  le récit de l'écran (efface les choix)
- *   proposer([[libellé, action], …])   les choix du joueur
- *   modifierChoix(rang, libellé)       un choix devient « déjà utilisé »
+ *   titre(message)                     le titre de l'écran
+ *   raconter(messages)                 le récit de l'écran (efface les choix)
+ *   proposer([[message, action], …])   les choix du joueur
+ *   modifierChoix(rang, message)       un choix devient « déjà utilisé »
  *   jet(valeur)                        un dé vient d'être tiré
  *   signaler(nom, monstre, options)    un événement à faire entendre (voir plus bas)
  *   ambiance(allumer)                  l'ambiance de fond du combat
@@ -18,7 +22,7 @@
  *   annulerSigne()                     système C : le signe prévu ne doit plus jouer
  *   desAGarder(des, basculer)          système B : les dés à garder ou relancer
  *   cacherDes()                        système B : plus de dés à choisir
- *   terminer(resultat)                 fin du combat : { ligne, donnees }
+ *   terminer(donnees)                  fin du combat : les résultats à enregistrer
  *
  * Événements signalés : apparition, victoire, mort-heros, fuite,
  * chance-reussie, chance-ratee, et, quand personne n'est blessé,
@@ -31,7 +35,6 @@
  */
 import { creerHasard } from './hasard.js';
 import { HEROS, MONSTRES } from './donnees.js';
-import { pv, pluriel } from './texte.js';
 import { SYSTEMES } from './systemes/index.js';
 
 export function creerCombat(options) {
@@ -39,7 +42,7 @@ export function creerCombat(options) {
   var hasard = creerHasard(options.graine);
   var systeme = options.systeme;
   var cle = options.monstre;
-  var monstre = MONSTRES[cle];
+  var monstre = MONSTRES[cle];   // les chiffres de l'adversaire
   if (!monstre || !SYSTEMES[systeme]) { throw new Error('Combat inconnu : système ' + systeme + ' contre ' + cle); }
 
   var partie = {
@@ -71,82 +74,79 @@ export function creerCombat(options) {
     return valeur;
   }
   function lancer(n) { var t = []; for (var i = 0; i < n; i += 1) { t.push(de()); } return t; }
-  function au(liste) { return liste[Math.floor(hasard() * liste.length)]; }
-  function titre(texte) { ui.titre(texte); }
+  // Un nombre entre 0 et 1 qui choisira la variante d'un texte (voir contenu/textes.js).
+  function tirage() { return hasard(); }
+  // Un message : son type, et les valeurs dont le texte a besoin.
+  function msg(type, donnees) { return { type: type, donnees: donnees || {} }; }
+  function titre(type, donnees) { ui.titre(msg(type, donnees)); }
   function signaler(nom, monstreDuSon, opts) { ui.signaler(nom, monstreDuSon, opts); }
 
-  // Le récit de l'écran. Il est aussi gardé dans la trace de la partie.
-  function raconter(phrases) {
-    var texte = phrases.filter(function (p) { return !!p; });
-    texte.forEach(function (p) { partie.trace.push(p); });
-    ui.raconter(texte);
+  // Le récit de l'écran. Les messages sont aussi gardés dans la trace de la partie.
+  function raconter(messages) {
+    messages.forEach(function (m) { partie.trace.push(m); });
+    ui.raconter(messages);
   }
   function proposer(liste) { ui.proposer(liste); }
 
   // ---------------------------------------------------------------------
   // TOUR PAR TOUR : ton jet, tes dégâts, puis le monstre, puis le bilan.
   // ---------------------------------------------------------------------
-  // « du squelette », « des squelettes » (bande du système G)…
-  function duMonstre() {
-    return partie.bande ? 'des squelettes' : monstre.nom.replace(/^le /, 'du ');
-  }
-
   // Fin de ton tour : le monstre ne joue que lorsque tu appuies sur le bouton.
   // suite(phrases) déroule le tour du monstre.
-  function versMonstre(phrases, suite) {
-    raconter(phrases);
-    proposer([['Au tour ' + duMonstre(), function () { suite([]); }]]);
+  function versMonstre(messages, suite) {
+    raconter(messages);
+    proposer([[msg('choix-au-tour-du-monstre'), function () { suite([]); }]]);
   }
 
   // Une étape intermédiaire : le récit, puis un seul bouton pour continuer.
-  function etape(phrases, libelle, suite) {
-    raconter(phrases);
-    proposer([[libelle, suite]]);
+  function etape(messages, choix, suite) {
+    raconter(messages);
+    proposer([[msg(choix), suite]]);
   }
 
   // Les deux tours sont finis : on passe à l'assaut suivant.
-  function finAssaut(phrases) {
-    raconter(phrases);
-    proposer([['Continuer', tourSuivant]]);
+  function finAssaut(messages) {
+    raconter(messages);
+    proposer([[msg('choix-continuer'), tourSuivant]]);
   }
 
   // Le monstre frappe. Si le coup est mortel, on propose les dés de chance.
-  function subir(degats, phrases) {
+  function subir(degats, messages) {
     if (partie.vie - degats > 0) {
       partie.vie -= degats;
-      finAssaut(phrases.concat(['Tu perds ' + pv(degats) + '.']));
+      finAssaut(messages.concat([msg('heros-perd', { degats: degats })]));
       return;
     }
-    proposerChance(degats, phrases, finAssaut);
+    proposerChance(degats, messages, finAssaut);
   }
 
-  // ensuite(phrases) est appelé si la chance te sauve.
-  function proposerChance(degats, phrases, ensuite) {
-    var texte = phrases.concat(['Ce coup serait le dernier.']);
+  // ensuite(messages) est appelé si la chance te sauve.
+  function proposerChance(degats, messages, ensuite) {
+    var texte = messages.concat([msg('coup-mortel')]);
     if (partie.chances === 0) {
-      texte.push('Il ne te reste aucun dé de chance.');
+      texte.push(msg('chance-epuisee'));
       raconter(texte);
-      proposer([['Continuer', function () { mourir(); }]]);
+      proposer([[msg('choix-continuer'), function () { mourir(); }]]);
       return;
     }
-    texte.push('Il te reste ' + pluriel(partie.chances, 'dé de chance', 'dés de chance') + '. Il faut ' + partie.seuilChance + ' ou plus.');
+    texte.push(msg('chance-proposee', { desRestants: partie.chances, seuil: partie.seuilChance }));
     raconter(texte);
     proposer([
-      ['Lancer un dé de chance', function () {
+      [msg('choix-tenter-sa-chance'), function () {
         var resultat = de();
         partie.chances -= 1;
         partie.decisions.chancesUtilisees += 1;
-        var lu = 'Dé de chance : ' + resultat + '.';
+        var lu = msg('chance-resultat', { de: resultat, desRestants: partie.chances });
         if (resultat >= partie.seuilChance) {
           partie.decisions.chancesReussies += 1;
           signaler('chance-reussie');
-          ensuite([lu, 'La chance te sourit : le coup te frôle sans te toucher.']);
+          ensuite([lu, msg('chance-reussie')]);
         } else {
           signaler('chance-ratee');
-          proposerChance(degats, [lu, 'Raté.'], ensuite);
+          proposerChance(degats, [lu, msg('chance-ratee')], ensuite);
         }
       }],
-      ['Renoncer', function () { mourir(); }]
+      [msg('choix-renoncer'), function () { mourir(); }]
     ]);
   }
 
@@ -155,104 +155,93 @@ export function creerCombat(options) {
     var r = partie.regles;
     var resultat = de();
     partie.decisions.fuites += 1;
-    var lu = 'Tu tentes de fuir : ' + resultat + '. Il fallait ' + r.fuite + ' ou plus.';
+    var lu = msg('fuite-resultat', { de: resultat, seuil: r.fuite, reussie: resultat >= r.fuite });
     if (resultat >= r.fuite) {
       signaler('fuite');
       ui.ambiance(false);
-      etape([lu, 'Tu recules d\'un bond et claques la porte derrière toi.'], 'Suite', function () {
-        titre('Tu as fui');
-        raconter(['Tu as échappé à ' + monstre.nom + '.']);
+      etape([lu, msg('fuite-reussie')], 'choix-suite', function () {
+        titre('titre-fuite');
+        raconter([msg('fuite-bilan')]);
         terminer('fuite');
       });
       return;
     }
-    moteur.fuiteRatee([lu, monstre.Nom + ' te barre le passage.']);
+    moteur.fuiteRatee([lu, msg('fuite-ratee')]);
   }
 
-  function vaincre(phrases) {
-    etape(phrases.concat([(moteur.mort && moteur.mort()) || monstre.mort]), 'Suite', function () {
-      titre('Victoire !');
+  function vaincre(messages) {
+    etape(messages.concat([msg('monstre-vaincu')]), 'choix-suite', function () {
+      titre('titre-victoire');
       ui.ambiance(false);
       signaler('victoire');
-      raconter(['Tu as vaincu ' + monstre.nom + '.']);
+      raconter([msg('victoire')]);
       terminer('victoire');
     });
   }
 
   function mourir() {
     partie.vie = 0;
-    titre('Tu es mort');
+    titre('titre-mort');
     ui.ambiance(false);
     signaler('mort-heros');
-    raconter(['Le noir se referme sur toi.']);
+    raconter([msg('heros-mort')]);
     terminer('mort');
   }
 
   // ---------------------------------------------------------------------
   // RÈGLES, ENTRÉE EN SCÈNE, ASSAUTS
   // ---------------------------------------------------------------------
+  // Les pages de règles : celles du système, puis la chance et la fuite.
   function reglesDuSysteme() {
-    var r = partie.regles;
-    var chance = 'Si un coup doit te tuer, tu peux lancer un dé de chance : sur ' + partie.seuilChance +
-      ' ou plus, tu l\'évites. Si tu échoues, tu peux en lancer un autre, tant qu\'il t\'en reste.';
-    var fuite = 'Fuir : tu lances un dé, il faut ' + r.fuite + ' ou plus. Si tu échoues, ' + monstre.nom + ' frappe sans riposte.';
-    return moteur.regles().concat([chance, fuite]);
+    return moteur.regles().concat(['regle-chance', 'regle-fuite']);
   }
 
   // Les règles, une page à la fois.
   function montrerRegle(i) {
     var pages = reglesDuSysteme();
-    titre('Règles · ' + (i + 1) + ' sur ' + pages.length);
-    raconter([pages[i].replace(/^Règles\. /, '').replace(/^Règles, inspirées /, 'Inspiré ')]);
+    titre('titre-regles', { page: i + 1, pages: pages.length });
+    raconter([msg(pages[i])]);
     var suite = i + 1 < pages.length
-      ? [['Suivant', function () { montrerRegle(i + 1); }], ['Passer les règles', entreeEnScene]]
-      : [['Voir l\'adversaire', entreeEnScene]];
-    if (i > 0) { suite.push(['Règle précédente', function () { montrerRegle(i - 1); }]); }
+      ? [[msg('choix-suivant'), function () { montrerRegle(i + 1); }], [msg('choix-passer-regles'), entreeEnScene]]
+      : [[msg('choix-voir-adversaire'), entreeEnScene]];
+    if (i > 0) { suite.push([msg('choix-regle-precedente'), function () { montrerRegle(i - 1); }]); }
     proposer(suite);
   }
 
   function entreeEnScene() {
     partie.enCombat = true;
-    titre('Ton adversaire');
+    titre('titre-adversaire');
     ui.ambiance(true);
     signaler('apparition', cle);
-    raconter([(moteur.entree && moteur.entree()) || monstre.entree]);
-    proposer([['Commencer le combat', tourSuivant]]);
+    raconter([msg('monstre-apparait', { monstre: cle })]);
+    proposer([[msg('choix-commencer'), tourSuivant]]);
   }
 
   function tourSuivant() {
     partie.tours += 1;
-    titre((moteur.parTours ? 'Tour ' : 'Assaut ') + partie.tours);
+    titre('titre-tour', { numero: partie.tours, parTours: !!moteur.parTours });
     moteur.tour();
   }
 
   // ---------------------------------------------------------------------
-  // FIN DU COMBAT : une ligne de journal et les données à envoyer.
+  // FIN DU COMBAT : les données à enregistrer (la ligne du journal est écrite par l'interface).
   // ---------------------------------------------------------------------
   function terminer(issue) {
     var d = partie.decisions;
     partie.fini = true;
     partie.issue = issue;
-    var ligne = 'Système ' + systeme + ' · ' + monstre.nom +
-      ' · chance ' + partie.seuilChance + '+ · ' + issue +
-      ' en ' + partie.tours + ' tour(s)' + (systeme === 'F' ? '' : ' · vie ' + Math.max(0, partie.vie) + '/' + partie.vieMax) +
-      moteur.journal(d) +
-      ' · dés de chance ' + d.chancesReussies + '/' + d.chancesUtilisees + ' réussis · fuites tentées ' + d.fuites;
     ui.terminer({
-      ligne: ligne,
-      donnees: {
-        type: 'combat',
-        systeme: systeme,
-        adversaire: monstre.nom.replace(/^le /, ''),
-        seuilChance: partie.seuilChance,
-        indice: systeme === 'C' ? partie.indice : '',
-        issue: issue,
-        tours: partie.tours,
-        vie: systeme === 'F' ? '' : Math.max(0, partie.vie),
-        chancesLancees: d.chancesUtilisees,
-        chancesReussies: d.chancesReussies,
-        fuites: d.fuites
-      }
+      type: 'combat',
+      systeme: systeme,
+      adversaire: cle,
+      seuilChance: partie.seuilChance,
+      indice: systeme === 'C' ? partie.indice : '',
+      issue: issue,
+      tours: partie.tours,
+      vie: systeme === 'F' ? '' : Math.max(0, partie.vie),
+      chancesLancees: d.chancesUtilisees,
+      chancesReussies: d.chancesReussies,
+      fuites: d.fuites
     });
   }
 
@@ -261,9 +250,9 @@ export function creerCombat(options) {
   // ---------------------------------------------------------------------
   var c = {
     partie: partie, ui: ui, hasard: hasard,
-    de: de, lancer: lancer, au: au, titre: titre, signaler: signaler,
+    de: de, lancer: lancer, tirage: tirage, msg: msg, titre: titre, signaler: signaler,
     raconter: raconter, proposer: proposer,
-    duMonstre: duMonstre, versMonstre: versMonstre, etape: etape,
+    versMonstre: versMonstre, etape: etape,
     finAssaut: finAssaut, continuer: finAssaut,
     subir: subir, proposerChance: proposerChance, fuir: fuir, vaincre: vaincre, mourir: mourir
   };
@@ -276,7 +265,6 @@ export function creerCombat(options) {
   return {
     partie: partie,
     moteur: moteur,
-    nom: moteur.nom,
     demarrer: function () { montrerRegle(0); }
   };
 }
