@@ -25,11 +25,69 @@ installerBruitages();
 installerHistoire(montrer);
 var combats = installerCombat(montrer, collecte);
 
+// ---------------------------------------------------------------------
+// RÉGLAGES DEPUIS N'IMPORTE QUEL ÉCRAN (touche O), et retour à cet écran
+// ---------------------------------------------------------------------
+var ecranAvantReglages = 'menu';
+
+function ecranVisible() {
+  var e = document.querySelector('.ecran:not([hidden])');
+  return e ? e.id : 'menu';
+}
+
+function ouvrirReglages() {
+  var actuel = ecranVisible();
+  if (actuel !== 'reglages' && actuel !== 'ecouter-sons') { ecranAvantReglages = actuel; }
+  montrer('reglages');
+}
+
+document.getElementById('quitter-reglages').addEventListener('click', function () {
+  var retour = ecranAvantReglages;
+  ecranAvantReglages = 'menu';
+  if (retour === 'combat' && combats.reprendre()) { return; }
+  montrer(retour === 'histoire' ? 'menu' : retour);
+});
+
+// ---------------------------------------------------------------------
+// CLAVIER COMMUN À TOUS LES ÉCRANS (cahier des charges, §9)
+// ---------------------------------------------------------------------
+function saisieEnCours() {
+  var a = document.activeElement;
+  return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT');
+}
+
+// Les boutons qu'on parcourt aux flèches sur l'écran visible : les choix d'abord.
+function boutonsDeLEcran() {
+  var ecran = document.querySelector('.ecran:not([hidden])');
+  if (!ecran) { return []; }
+  return Array.prototype.filter.call(ecran.querySelectorAll('button'), function (b) {
+    return !b.disabled && b.offsetParent !== null && !b.closest('#des');
+  });
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.ctrlKey || e.metaKey || e.altKey || saisieEnCours()) { return; }
+  if (document.getElementById('combat').classList.contains('roule')) { return; }
+  if (e.key === 'o' || e.key === 'O') { e.preventDefault(); ouvrirReglages(); return; }
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') { return; }
+  var boutons = boutonsDeLEcran();
+  if (!boutons.length) { return; }
+  e.preventDefault();
+  var i = boutons.indexOf(document.activeElement);
+  if (i < 0) { boutons[e.key === 'ArrowDown' ? 0 : boutons.length - 1].focus(); return; }
+  var suivant = (i + (e.key === 'ArrowDown' ? 1 : -1) + boutons.length) % boutons.length;
+  boutons[suivant].focus();
+});
+
 // Navigation : système, puis adversaire, puis le combat.
 var choix = { systeme: null, monstre: null };
 
 document.querySelectorAll('[data-aller]').forEach(function (b) {
-  b.addEventListener('click', function () { montrer(b.getAttribute('data-aller')); });
+  b.addEventListener('click', function () {
+    var cible = b.getAttribute('data-aller');
+    if (cible === 'reglages') { ouvrirReglages(); return; }
+    montrer(cible);
+  });
 });
 document.querySelectorAll('[data-systeme]').forEach(function (b) {
   b.addEventListener('click', function () {

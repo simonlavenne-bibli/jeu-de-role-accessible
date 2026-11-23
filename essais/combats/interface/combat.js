@@ -25,6 +25,7 @@ export function installerCombat(montrer, collecte) {
   var sousTitre = document.getElementById('sous-titre');
   var tapis = document.getElementById('tapis');
   var desEnCours = document.getElementById('des-en-cours');
+  var zonePoint = document.getElementById('point');
   var image = document.getElementById('illustration');
   var caseDes = caseMemorisee('reglage-des', 'des');
   var caseIllustrations = caseMemorisee('reglage-illustrations', 'illustrations');
@@ -78,6 +79,7 @@ export function installerCombat(montrer, collecte) {
     // Pendant que les dés roulent, le récit reste caché : le focus va sur « Les dés roulent… »,
     // puis sur le récit une fois les dés arrêtés. Les compteurs gardent leurs anciennes valeurs,
     // et les bruitages attendent que les dés s'arrêtent.
+    zonePoint.hidden = true;
     var sons = sonsEnAttente;
     sonsEnAttente = [];
     if (!montrerDes(sons)) { zoneRecit.focus(); afficherCompteurs(); bruitages(sons); }
@@ -284,10 +286,39 @@ export function installerCombat(montrer, collecte) {
   }
 
   // ---------------------------------------------------------------------
-  // CLAVIER : les chiffres choisissent les boutons du combat.
+  // RÉPÉTER ET FAIRE LE POINT (cahier des charges, §3 : le joueur garde la main)
+  // ---------------------------------------------------------------------
+  // Répéter : le focus quitte le récit puis y revient, pour que le lecteur d'écran le relise.
+  function repeter() {
+    if (!combat || ecranCombat.classList.contains('roule')) { return; }
+    zonePoint.hidden = true;
+    document.getElementById('repeter').focus();
+    setTimeout(function () { zoneRecit.focus(); }, 50);
+  }
+
+  // Où j'en suis : la vie, les dés de chance, et les choix possibles en ce moment.
+  function faireLePoint() {
+    if (!combat || ecranCombat.classList.contains('roule')) { return; }
+    var phrases = combat.faireLePoint().map(texte);
+    var choix = Array.prototype.map.call(zoneChoix.querySelectorAll('button'), function (b) { return b.textContent; });
+    if (choix.length) { phrases.push('Tes choix : ' + choix.join(', ') + '.'); }
+    zonePoint.textContent = phrases.join(' ');
+    zonePoint.hidden = false;
+    zonePoint.focus();
+  }
+
+  document.getElementById('repeter').addEventListener('click', repeter);
+  document.getElementById('faire-le-point').addEventListener('click', faireLePoint);
+
+  // ---------------------------------------------------------------------
+  // CLAVIER : les chiffres choisissent, R répète, P fait le point.
   // ---------------------------------------------------------------------
   document.addEventListener('keydown', function (e) {
     if (ecranCombat.hidden || ecranCombat.classList.contains('roule')) { return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) { return; }
+    var touche = e.key.toLowerCase();
+    if (touche === 'r') { e.preventDefault(); repeter(); return; }
+    if (touche === 'p') { e.preventDefault(); faireLePoint(); return; }
     var n = parseInt(e.key, 10);
     if (n >= 1 && n <= 9) {
       var boutons = zoneChoix.querySelectorAll('button');
@@ -295,5 +326,13 @@ export function installerCombat(montrer, collecte) {
     }
   });
 
-  return { commencer: commencer };
+  // Revenir au combat en cours (par exemple après les réglages) : le récit est relu.
+  function reprendre() {
+    if (!combat) { return false; }
+    montrer('combat');
+    zoneRecit.focus();
+    return true;
+  }
+
+  return { commencer: commencer, reprendre: reprendre };
 }

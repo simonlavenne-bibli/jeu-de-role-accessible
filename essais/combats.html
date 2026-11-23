@@ -62,7 +62,11 @@
   .recit-histoire p { font-size: 1.3rem; line-height: 1.6; margin: 0 0 1rem; }
   /* Dés en 3D pendant le combat : le récit et les choix attendent qu'ils s'arrêtent. */
   #tapis.tapis-des { height: 11rem; margin-bottom: 0.6rem; }
-  #combat.roule #recit, #combat.roule #des, #combat.roule #choix { visibility: hidden; }
+  #combat.roule #recit, #combat.roule #des, #combat.roule #choix, #combat.roule #outils-combat, #combat.roule #point { visibility: hidden; }
+  #outils-combat button { font-weight: normal; min-height: 3rem; text-align: center; }
+  .touche { font-size: 0.85rem; }
+  #point { border: 3px dashed var(--encre); padding: 0.5rem 0.7rem; }
+  #point:focus { outline: 4px dashed var(--encre); outline-offset: 3px; }
   #titre-combat { margin-top: 0.2rem; }
   #recit { font-size: 1.35rem; }
   #recit { min-height: 6rem; margin-bottom: 0.8rem; }
@@ -85,6 +89,7 @@
 <section id="menu" class="ecran" aria-labelledby="titre-menu">
   <h1 id="titre-menu" tabindex="-1">Essai des combats</h1>
   <p>Compare plusieurs façons de combattre aux dés.</p>
+  <p class="discret">Au clavier : les chiffres choisissent, les flèches parcourent les choix, Entrée valide. En combat, R répète, P fait le point. O ouvre les réglages.</p>
   <div class="boutons">
     <button type="button" id="ouvrir-histoire">1. L'histoire</button>
     <button type="button" data-aller="choix-systeme">2. Jouer un combat</button>
@@ -164,6 +169,12 @@
   <div id="recit" tabindex="-1"></div>
   <div id="des" hidden></div>
   <div id="choix"></div>
+  <!-- Toujours au même endroit, sous les choix (cahier des charges, §3 et §9). -->
+  <div id="outils-combat" class="deux">
+    <button type="button" id="repeter">Répéter <span class="touche">(R)</span></button>
+    <button type="button" id="faire-le-point">Où j'en suis <span class="touche">(P)</span></button>
+  </div>
+  <p id="point" tabindex="-1" hidden></p>
 </section>
 
 <!-- ======================= AVIS : 3 ÉCRANS ======================= -->
@@ -253,8 +264,9 @@
     <label><input type="radio" name="seuil-chance" value="4" checked> 4 ou plus</label>
     <label><input type="radio" name="seuil-chance" value="5"> 5 ou plus</label>
   </fieldset>
+  <p class="discret">Au clavier : les chiffres choisissent, les flèches parcourent les choix, Entrée valide. En combat, R répète le dernier message et P fait le point. O ouvre les réglages, depuis n'importe quel écran.</p>
   <p class="discret" id="mention-collecte">Les résultats de tes combats et ton avis sont envoyés à l'équipe de La Lumière pour comparer les systèmes. Rien d'autre n'est collecté, à part le prénom ou pseudo si tu l'indiques.</p>
-  <button type="button" class="retour" data-aller="menu">Retour</button>
+  <button type="button" class="retour" id="quitter-reglages">Retour</button>
 </section>
 
 <!-- ======================= ÉCOUTER LES BRUITAGES ======================= -->

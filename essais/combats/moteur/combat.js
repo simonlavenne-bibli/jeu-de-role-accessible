@@ -24,6 +24,9 @@
  *   cacherDes()                        système B : plus de dés à choisir
  *   terminer(donnees)                  fin du combat : les résultats à enregistrer
  *
+ * Commande que l'interface peut envoyer au moteur (contrat de données, §3) :
+ *   combat.faireLePoint()  → les messages qui disent où en sont le héros et le monstre
+ *
  * Événements signalés : apparition, victoire, mort-heros, fuite,
  * chance-reussie, chance-ratee, et, quand personne n'est blessé,
  * parade (coup paré) ou rate (coup dans le vide).
@@ -290,9 +293,19 @@ export function creerCombat(options) {
     partie.indice = 'texte'; // navigateur sans son : on retombe sur le texte
   }
 
+  // « Faire le point » : l'état du héros et du monstre, sans rien changer au combat.
+  // (Les choix possibles sont ceux affichés : l'interface les ajoute.)
+  function faireLePoint() {
+    return [
+      msg('point-heros', { vie: Math.max(0, partie.vie), vieMax: partie.vieMax, desDeChance: partie.chances, karma: partie.karma, etat: partie.niveauHeros }),
+      msg('point-monstre', { vie: Math.max(0, partie.vieMonstre), etat: partie.niveauMonstre, bande: partie.bande || 0 })
+    ];
+  }
+
   return {
     partie: partie,
     moteur: moteur,
-    demarrer: function () { montrerRegle(0); }
+    demarrer: function () { montrerRegle(0); },
+    faireLePoint: faireLePoint
   };
 }

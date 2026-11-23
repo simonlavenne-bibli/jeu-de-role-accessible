@@ -132,3 +132,18 @@ test('fuite ratée : un dé de chance est proposé, et sa réussite fait fuir', 
   });
   assert.ok(vus.proposee > 100 && vus.reussie > 20 && vus.refusee > 20, JSON.stringify(vus));
 });
+
+test('faire le point ne change rien au combat et se traduit dans tous les systèmes', async function () {
+  var { creerCombat } = await import('../essais/combats/moteur/combat.js');
+  var { ecrire } = await import('../essais/combats/contenu/textes.js');
+  LISTE_SYSTEMES.forEach(function (systeme) {
+    LISTE_MONSTRES.forEach(function (monstre) {
+      var ui = new Proxy({}, { get: function (o, nom) { return nom === 'audioDisponible' ? function () { return true; } : function () {}; } });
+      var combat = creerCombat({ systeme: systeme, monstre: monstre, graine: 1, ui: ui });
+      var avant = JSON.stringify(combat.partie);
+      var phrases = combat.faireLePoint().map(function (m) { return ecrire(m, combat.partie); });
+      assert.equal(JSON.stringify(combat.partie), avant, systeme);
+      phrases.forEach(function (p) { assert.ok(!/undefined|NaN/.test(p), systeme + ' : ' + p); });
+    });
+  });
+});

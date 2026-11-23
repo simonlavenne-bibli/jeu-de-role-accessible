@@ -178,6 +178,19 @@ var T = {
   'victoire': function (d, p) { return 'Tu as vaincu ' + m(p).nom + '.'; },
   'heros-mort': function () { return 'Le noir se referme sur toi.'; },
 
+  // --- Faire le point ---------------------------------------------------
+  'point-heros': function (d, p) {
+    var t = p.systeme === 'F' ? 'Tu es ' + ETATS_F[d.etat] + '.' : 'Il te reste ' + pv(d.vie) + ' sur ' + d.vieMax + '.';
+    t += d.desDeChance ? ' Il te reste ' + pluriel(d.desDeChance, 'dé de chance', 'dés de chance') + '.' : ' Tu n\'as plus de dé de chance.';
+    if (p.systeme === 'D') { t += ' Tu as ' + pluriel(d.karma, 'point de karma', 'points de karma') + '.'; }
+    return t;
+  },
+  'point-monstre': function (d, p) {
+    if (p.systeme === 'F') { return m(p).Nom + ' est ' + ETATS_F[d.etat] + '.'; }
+    if (d.bande) { return d.vie > 1 ? d.vie + ' squelettes sont encore debout.' : 'Un squelette est encore debout.'; }
+    return m(p).Nom + ' a ' + pv(d.vie) + '.';
+  },
+
   // --- Règles communes -------------------------------------------------
   'regle-chance': function (d, p) {
     return 'Si un coup doit te tuer, ou si ta fuite échoue, tu peux lancer un dé de chance : sur ' + p.seuilChance +
