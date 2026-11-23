@@ -18,7 +18,7 @@
   // Styles du tapis et des dés, ajoutés une seule fois à la page.
   var style = document.createElement('style');
   style.textContent = [
-    '.tapis-des { position: relative; height: 18rem; border: 3px solid #fff; overflow: hidden; perspective: 700px; perspective-origin: 50% -30%; }',
+    '.tapis-des { position: relative; height: 18rem; border: 3px solid var(--encre, #fff); overflow: hidden; perspective: 700px; perspective-origin: 50% -30%; }',
     '.tapis-des .emplacement { position: absolute; left: 0; top: 0; transform-style: preserve-3d; will-change: transform; }',
     '.tapis-des .ombre { position: absolute; left: 0; top: 0; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,0.25), rgba(255,255,255,0)); will-change: transform, opacity; }',
     '.tapis-des .de { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }',
@@ -87,16 +87,14 @@
 
   // À appeler pendant un appui du joueur : iPhone n'autorise le son qu'à ce moment-là.
   function preparerSon() {
+    if (!window.Mixeur || !Mixeur.preparer()) { return false; }
     if (!audio) {
-      var Contexte = window.AudioContext || window.webkitAudioContext;
-      if (!Contexte) { return false; }
-      audio = new Contexte();
+      audio = Mixeur.contexte();   // le contexte unique de la page (audio.js)
       // Une seconde de bruit blanc, réutilisée pour chaque choc.
       bruit = audio.createBuffer(1, audio.sampleRate, audio.sampleRate);
       var donnees = bruit.getChannelData(0);
       for (var i = 0; i < donnees.length; i += 1) { donnees[i] = Math.random() * 2 - 1; }
     }
-    if (audio.state === 'suspended') { audio.resume(); }
     return true;
   }
 
@@ -123,7 +121,7 @@
       volume.connect(panneau);
       sortie = panneau;
     }
-    sortie.connect(audio.destination);
+    sortie.connect(Mixeur.couche('bruitages'));
     source.start(instant, entre(0, 0.9), duree + 0.02);
   }
 

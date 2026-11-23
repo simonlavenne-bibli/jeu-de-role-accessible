@@ -1,6 +1,6 @@
 # État du projet
 
-Mis à jour le 21 novembre 2026.
+Mis à jour le 23 novembre 2026.
 
 **En une phrase :** la conception est posée, l'habillage (images, sons, voix) est en pause, et on teste en texte seul plusieurs systèmes de combat auprès de testeurs pour choisir le plus prenant.
 
@@ -51,6 +51,20 @@ Mis à jour le 21 novembre 2026.
 - Bruitages et ambiance dans l'essai des combats (21 novembre, `essais/sons.js`) : cri de chaque monstre à son arrivée, cri de douleur et choc de lame quand il est touché, puis cri de rage (trois variantes par monstre, plus furieux quand il lui reste peu de vie), son de mort, coup sourd quand le héros est touché, parade, coup dans le vide, dés de chance, fanfare, glas, fuite, et ambiance de fond (grondement, gouttes d'eau). Sons rétro fabriqués par le programme, joués quand les dés s'arrêtent. Réglage « Bruitages et ambiance » et sous-menu « Écouter les bruitages ».
 - Sons enregistrés fournis par Simon (21 novembre, libres de droits, `essais/sons/`) : cri du monstre touché (même enregistrement, plus aigu pour le squelette, plus grave pour le démon), cri de douleur du héros, cri de victoire du monstre quand le héros meurt (avant le glas). Le cri de rage suit le cri enregistré. Si un fichier manque, le son fabriqué prend le relais.
 - L'histoire dans l'essai des combats (21 novembre) : « 1. L'histoire » dans le menu principal, le prologue de `docs/intrigue.md` en cinq parties, une par écran, avec une musique sombre fabriquée par le programme (`essais/musique.js` : orgue grave en ré mineur, bourdon, cloche lointaine) qui joue tant qu'on lit. Case « Musique de l'histoire » dans Réglages.
+- Grande mise à jour technique de l'essai des combats (23 novembre, branche `moteur-en-modules`, à valider par Simon) :
+  - **Moteur séparé de l'affichage, en modules** : les règles des sept systèmes sont dans `essais/combats/moteur/` et ne touchent ni à la page ni au son. Sur 168 combats rejoués avec le même hasard, l'ancienne et la nouvelle page affichaient exactement les mêmes textes, choix et compteurs.
+  - **Textes hors du moteur** (contrat de données, §4 et §5) : le moteur émet des messages nommés ; toutes les phrases sont dans `essais/combats/contenu/textes.js`. Pour réécrire une phrase, on ne touche qu'à ce fichier.
+  - **Bruitages signalés par le moteur** au lieu d'être devinés dans le récit. Corrigé au passage : en D, un 1 au dé fait entendre le coup dans le vide ; en B, les parades qui bloquent tout et l'arrêt sans coup font entendre leur bruitage.
+  - **Dé de chance après une fuite ratée** (décision du 15 novembre) : sur le seuil de chance ou plus, on échappe quand même ; « Rester et combattre » laisse le monstre frapper sans riposte, comme avant.
+  - **Un seul contexte audio** pour toute la page (`essais/audio.js`), au lieu de quatre, et **un volume par couche** dans Réglages : bruitages et dés, ambiance, musique, indices du système C.
+  - **Focus pendant les dés** : le lecteur d'écran est placé sur « Les dés roulent… », puis sur le récit quand les dés s'arrêtent (avant, il tombait sur un récit caché).
+  - **Commandes** (cahier des charges, §3 et §9) : « Répéter » (R) et « Où j'en suis » (P), aussi en boutons sous les choix ; flèches pour parcourir les choix ; O ouvre les réglages depuis n'importe quel écran, « Retour » ramène au combat en cours.
+  - **Réglages d'affichage** (décision du 15 novembre, cahier, §4) : quatre jeux de couleurs (blanc sur noir, noir sur blanc, jaune sur noir, orange sur noir), illustrations teintées en conséquence ; quatre tailles de texte ; vibrations (Android seulement, la case est cachée sur iPhone).
+  - **Application installable et jouable hors ligne** (décision du 15 novembre) : manifeste, icônes, service worker qui prend toujours la dernière version quand on est en ligne.
+  - **Panneau de diagnostic** (cahier, §10), dans Réglages : version, navigateur, son, hors ligne, réglages et erreurs, à copier pour signaler un problème.
+  - **Hasard avec graine** : `combats.html?graine=12` rejoue toujours le même combat.
+  - **Tests sans navigateur** (`npm test`) et **simulation d'équilibrage** (`npm run simulation`).
+  - Pas fait, car pas encore décidé ou hors de la page d'essai : voix, donjon, sauvegarde, butin, coup critique sur double 6 (« à valider » dans le contrat), illustrations en pixel art (branche `illustrations-essai`).
 
 ## En cours
 

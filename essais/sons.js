@@ -70,22 +70,20 @@
   var VITESSE_CRI = { squelette: 1.25, 'loup-garou': 1, demon: 0.75 };
 
   function preparer() {
+    if (!window.Mixeur || !Mixeur.preparer()) { return false; }
     if (!audio) {
-      var Contexte = window.AudioContext || window.webkitAudioContext;
-      if (!Contexte) { return false; }
-      audio = new Contexte();
+      audio = Mixeur.contexte();   // le contexte unique de la page (audio.js)
       bruit = audio.createBuffer(1, audio.sampleRate * 2, audio.sampleRate);
       var d = bruit.getChannelData(0);
       for (var i = 0; i < d.length; i += 1) { d[i] = Math.random() * 2 - 1; }
       general = audio.createGain();
       general.gain.value = 0.8;
-      general.connect(audio.destination);
+      general.connect(Mixeur.couche('bruitages'));
       ambianceGain = audio.createGain();
       ambianceGain.gain.value = 0;
-      ambianceGain.connect(audio.destination);
+      ambianceGain.connect(Mixeur.couche('ambiance'));
       chargerEnregistrements();
     }
-    if (audio.state === 'suspended') { audio.resume(); }
     return true;
   }
 

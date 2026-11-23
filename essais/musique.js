@@ -34,15 +34,13 @@
   var CLOCHE = [74, 77, 81, 69, 72];   // ré, fa, la, la, do aigus
 
   function preparer() {
+    if (!window.Mixeur || !Mixeur.preparer()) { return false; }
     if (!audio) {
-      var Contexte = window.AudioContext || window.webkitAudioContext;
-      if (!Contexte) { return false; }
-      audio = new Contexte();
+      audio = Mixeur.contexte();   // le contexte unique de la page (audio.js)
       sortie = audio.createGain();
       sortie.gain.value = 0;
-      sortie.connect(audio.destination);
+      sortie.connect(Mixeur.couche('musique'));
     }
-    if (audio.state === 'suspended') { audio.resume(); }
     return true;
   }
 
