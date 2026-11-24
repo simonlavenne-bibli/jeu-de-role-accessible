@@ -68,6 +68,8 @@ Mis à jour le 24 novembre 2026.
 
 - Avis à chaud (24 novembre) : à la fin de chaque combat, « Ce combat t'a plu ? » (de 1 à 5, ou Passer), puis un mot facultatif. La note part dans l'onglet Avis de la feuille, sans changer le script Google : le commentaire commence par « Note 4/5 · Système D · squelette · victoire ». L'écran Résultats précise que chaque combat est envoyé automatiquement (plus rien à copier).
 
+- Illustrations retravaillées (24 novembre) : squelette, loup-garou et démon redessinés avec un trait d'encre plus épais et une ambiance plus sombre (sang sur l'épée du squelette, loup-garou qui bondit, démon penché vers le héros). Mêmes noms de fichiers dans `essais/images/`. Originaux dans Canva : MAHb3W4QQjo (squelette), MAHb3XNHysc (loup-garou), MAHb3atWcZ0 (démon).
+
 ## En cours
 
 - Séances de test des systèmes de combat avec plusieurs joueurs.
