@@ -4,6 +4,7 @@ Une ligne par décision prise par Simon, la plus récente en haut. Ne pas reveni
 
 | Date | Décision |
 |---|---|
+| 24/11/2026 | Illustrations des monstres : toujours monochromes, mais trait plus épais et plus marqué, ambiance plus sombre et monstres plus féroces. |
 | 24/11/2026 | Après chaque combat, demander une note de 1 à 5 et un mot facultatif. Les notes vont dans l'onglet Avis existant, dans le commentaire (option B, sans modifier le script Google). Les testeurs n'ont plus rien à copier : les combats partent automatiquement. |
 | 21/11/2026 | Les textes décrivent ce que montrent les illustrations : pas de trône pour le démon ; un seul squelette visible, les autres de la bande dans l'ombre. |
 | 21/11/2026 | Sons enregistrés de Simon (libres de droits) pour le cri du monstre touché, le cri de douleur du héros et le cri de victoire du monstre ; une hauteur par monstre ; les cris de rage sont gardés, après le cri enregistré. |
