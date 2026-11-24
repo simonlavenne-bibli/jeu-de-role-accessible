@@ -76,6 +76,7 @@
   .retour { margin-top: 0.6rem; font-weight: normal; min-height: 3rem; }
   .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
   .volume { display: block; width: 100%; height: 2.6rem; margin: 0 0 0.6rem; accent-color: var(--encre); }
+  .question-avis { font-weight: bold; margin-top: 1rem; }
   .champ { font: inherit; width: 100%; padding: 0.5rem; margin: 0.2rem 0 0.8rem; background: var(--fond); color: var(--encre); border: 3px solid var(--encre); }
   /* Compteurs du combat : monstre en haut à gauche, héros en haut à droite. */
   #compteurs { display: flex; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.6rem; }
@@ -264,7 +265,7 @@
   <h2>Cette séance</h2>
   <p id="bilan">Aucun combat joué pour l'instant.</p>
   <h2>Journal des combats</h2>
-  <p class="discret">Chaque combat terminé s'ajoute ici. Copie le journal et envoie-le après la séance de test.</p>
+  <p class="discret">Chaque combat terminé est envoyé automatiquement à l'équipe de La Lumière : tu n'as rien à copier ni à envoyer. Le journal ci-dessous est seulement là pour toi.</p>
   <textarea id="journal" readonly aria-label="Journal des combats"></textarea>
   <div class="deux">
     <button id="copier" type="button">Copier le journal</button>

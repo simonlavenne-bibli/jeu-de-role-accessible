@@ -140,5 +140,20 @@ export function installerCollecte() {
     document.getElementById('info-copie').textContent = 'Journal effacé.';
   });
 
-  return { afficherBilan: afficherBilan, enregistrerCombat: enregistrerCombat };
+  // Avis à chaud après un combat. Rangé dans l'onglet Avis existant (sans changer le script
+  // Google) : la note, le système, l'adversaire et l'issue sont écrits au début du commentaire.
+  var ISSUES = { victoire: 'victoire', mort: 'mort', fuite: 'fuite' };
+  function envoyerNote(resultat, note, mot) {
+    var resume = 'Note ' + note + '/5 · Système ' + resultat.systeme + ' · ' + resultat.adversaire +
+      ' · ' + (ISSUES[resultat.issue] || resultat.issue);
+    return transmettre({
+      type: 'avis',
+      apprecies: '',
+      prefere: '',
+      commentaire: mot ? resume + ' · ' + mot : resume,
+      combats: combatsJoues()
+    });
+  }
+
+  return { afficherBilan: afficherBilan, enregistrerCombat: enregistrerCombat, envoyerNote: envoyerNote };
 }

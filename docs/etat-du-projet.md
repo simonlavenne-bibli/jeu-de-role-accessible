@@ -1,6 +1,6 @@
 # État du projet
 
-Mis à jour le 23 novembre 2026.
+Mis à jour le 24 novembre 2026.
 
 **En une phrase :** la conception est posée, l'habillage (images, sons, voix) est en pause, et on teste en texte seul plusieurs systèmes de combat auprès de testeurs pour choisir le plus prenant.
 
@@ -65,6 +65,8 @@ Mis à jour le 23 novembre 2026.
   - **Hasard avec graine** : `combats.html?graine=12` rejoue toujours le même combat.
   - **Tests sans navigateur** (`npm test`) et **simulation d'équilibrage** (`npm run simulation`).
   - Pas fait, car pas encore décidé ou hors de la page d'essai : voix, donjon, sauvegarde, butin, coup critique sur double 6 (« à valider » dans le contrat), illustrations en pixel art (branche `illustrations-essai`).
+
+- Avis à chaud (24 novembre) : à la fin de chaque combat, « Ce combat t'a plu ? » (de 1 à 5, ou Passer), puis un mot facultatif. La note part dans l'onglet Avis de la feuille, sans changer le script Google : le commentaire commence par « Note 4/5 · Système D · squelette · victoire ». L'écran Résultats précise que chaque combat est envoyé automatiquement (plus rien à copier).
 
 ## En cours
 
