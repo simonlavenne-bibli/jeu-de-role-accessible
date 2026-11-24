@@ -142,7 +142,68 @@ export function installerCombat(montrer, collecte) {
   function terminer(donnees) {
     var heure = new Date().toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
     var p = combat.partie;
-    collecte.enregistrerCombat(Object.assign({}, donnees, { adversaire: nomDeLAdversaire(p) }), heure + ' · ' + ligneDeJournal(p));
+    var resultat = Object.assign({}, donnees, { adversaire: nomDeLAdversaire(p) });
+    collecte.enregistrerCombat(resultat, heure + ' · ' + ligneDeJournal(p));
+    demanderNote(resultat);
+  }
+
+  // ---------------------------------------------------------------------
+  // AVIS À CHAUD : une note après chaque combat, puis un mot facultatif
+  // ---------------------------------------------------------------------
+  var NOTES = ['Pas du tout', 'Un peu', 'Moyennement', 'Bien', 'Beaucoup'];
+
+  // Sous le résultat du combat, sur le même écran : « Ce combat t'a plu ? ».
+  function demanderNote(resultat) {
+    var question = document.createElement('p');
+    question.className = 'question-avis';
+    question.textContent = 'Ce combat t\'a plu ? Réponds de 1 à 5. Ta réponse aide à choisir le système du jeu.';
+    zoneRecit.appendChild(question);
+    var choix = NOTES.map(function (mot, i) {
+      // Le numéro du bouton (1 à 5) est la note.
+      return [mot, function () { demanderCommentaire(resultat, i + 1); }];
+    });
+    choix.push(['Passer', function () { finDuCombat(''); }]);
+    proposer(choix);
+  }
+
+  function demanderCommentaire(resultat, note) {
+    titreCombat.textContent = 'Ton avis';
+    zoneRecit.textContent = '';
+    zonePoint.hidden = true;
+    var p = document.createElement('p');
+    p.textContent = 'Merci pour ta note : ' + note + ' sur 5. Un mot à ajouter ? C\'est facultatif.';
+    zoneRecit.appendChild(p);
+    var etiquette = document.createElement('label');
+    etiquette.setAttribute('for', 'mot-avis');
+    etiquette.className = 'discret';
+    etiquette.textContent = 'Ce qui t\'a plu ou déplu dans ce combat';
+    var zone = document.createElement('textarea');
+    zone.id = 'mot-avis';
+    zone.className = 'champ';
+    zone.rows = 4;
+    zone.maxLength = 600;
+    zoneRecit.appendChild(etiquette);
+    zoneRecit.appendChild(zone);
+    proposer([
+      ['Envoyer', function () { envoyer(zone.value.trim()); }],
+      ['Non merci', function () { envoyer(''); }]
+    ]);
+    zoneRecit.focus();
+    function envoyer(mot) {
+      collecte.envoyerNote(resultat, note, mot);
+      finDuCombat('Merci, ton avis est envoyé.');
+    }
+  }
+
+  // Les choix habituels de fin de combat.
+  function finDuCombat(message) {
+    if (message) {
+      zoneRecit.textContent = '';
+      var p = document.createElement('p');
+      p.textContent = message;
+      zoneRecit.appendChild(p);
+      zoneRecit.focus();
+    }
     proposer([
       ['Rejouer le même combat', function () { commencer(dernierChoix.systeme, dernierChoix.monstre); }],
       ['Changer de combat', function () { quitterCombat('choix-systeme'); }],
@@ -333,6 +394,9 @@ export function installerCombat(montrer, collecte) {
   // ---------------------------------------------------------------------
   document.addEventListener('keydown', function (e) {
     if (ecranCombat.hidden || ecranCombat.classList.contains('roule')) { return; }
+    // Pendant qu'on écrit un commentaire, les touches servent au texte.
+    var actif = document.activeElement;
+    if (actif && (actif.tagName === 'TEXTAREA' || actif.tagName === 'INPUT')) { return; }
     if (e.ctrlKey || e.metaKey || e.altKey) { return; }
     var touche = e.key.toLowerCase();
     if (touche === 'r') { e.preventDefault(); repeter(); return; }
